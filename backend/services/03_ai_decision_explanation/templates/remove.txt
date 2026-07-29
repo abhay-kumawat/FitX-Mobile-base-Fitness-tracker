@@ -1,0 +1,4 @@
+EXERCISE REMOVAL RATIONALE:
+Exercise '{exercise_name}' was removed from your plan.
+Reason: {reason}
+Biomechanical impact: Reduces joint stress on {body_part} by {stress_reduction_pct}%.

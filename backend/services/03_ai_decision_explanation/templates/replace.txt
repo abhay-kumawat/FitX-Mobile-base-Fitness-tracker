@@ -1,0 +1,4 @@
+EXERCISE REPLACEMENT RATIONALE:
+Original Exercise '{original_exercise}' replaced with '{replacement_exercise}'.
+Reason: {reason}
+Biomechanical benefit: Maintains hypertrophy stimulus while protecting {body_part}.

@@ -1,0 +1,23 @@
+{
+  "name": "fitx-ai-platform",
+  "version": "1.0.0",
+  "description": "Hyper-personalized AI Fitness & Nutrition Platform",
+  "private": true,
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python run.py",
+    "test": "python run.py --test",
+    "docker": "python run.py --docker",
+    "backend": "python run.py --backend-only",
+    "frontend": "python run.py --frontend-only"
+  },
+  "keywords": [
+    "fitness",
+    "fastapi",
+    "nextjs",
+    "ai",
+    "gemini"
+  ],
+  "author": "",
+  "license": "ISC"
+}

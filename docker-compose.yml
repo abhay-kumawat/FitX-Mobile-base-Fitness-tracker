@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: fitx-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=FitX AI Platform
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:///./fitx.db
+      - SECRET_KEY=super-secret-fitx-ai-key-2026-hyper-personalized-security
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - fitx-db-data:/app
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: fitx-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  fitx-db-data:

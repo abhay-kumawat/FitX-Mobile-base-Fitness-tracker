@@ -1,0 +1,5 @@
+FITX AI COACH RESPONSE:
+{coach_response}
+
+RECOMMENDED NEXT ACTIONS:
+{actions}
