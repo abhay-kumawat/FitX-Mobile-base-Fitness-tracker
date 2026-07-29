@@ -176,7 +176,7 @@ export default function DynamicCalendarPage() {
         </div>
 
         {/* Week View Picker Bar */}
-        <div className="grid grid-cols-7 gap-1 pt-2 border-t border-slate-200 text-center font-mono">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 pt-2 border-t border-slate-200 text-center font-mono min-w-0">
           {weekDays.map((w) => {
             const isSelected = selectedDate === w.date;
             const hasEvent = events.some((e) => e.date === w.date);
@@ -187,16 +187,16 @@ export default function DynamicCalendarPage() {
                   soundscape.playTapSound();
                   setSelectedDate(w.date);
                 }}
-                className={`py-1.5 px-0.5 rounded-xl border transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95 min-w-0 ${
+                className={`py-1.5 px-0.5 rounded-xl border transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95 min-w-0 overflow-hidden ${
                   isSelected
                     ? "bg-emerald-500 text-white border-emerald-600 font-extrabold shadow-sm"
                     : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                 }`}
               >
-                <span className="text-[8px] uppercase opacity-80 truncate w-full text-center font-extrabold">{w.day}</span>
-                <span className="text-xs font-black">{w.date.split("-")[2]}</span>
+                <span className="text-[7.5px] sm:text-[8px] uppercase opacity-80 truncate w-full text-center font-extrabold leading-none">{w.day}</span>
+                <span className="text-[11px] sm:text-xs font-black mt-0.5">{w.date.split("-")[2]}</span>
                 {hasEvent && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-emerald-500"}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 shrink-0 ${isSelected ? "bg-white" : "bg-emerald-500"}`} />
                 )}
               </button>
             );

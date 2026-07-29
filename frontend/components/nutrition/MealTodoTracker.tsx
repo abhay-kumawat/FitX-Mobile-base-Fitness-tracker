@@ -146,11 +146,11 @@ export const MealTodoTracker: React.FC<MealTodoTrackerProps> = ({ dateStr, onOpe
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       <span className={`px-2 py-0.5 text-[10px] font-black rounded-lg border shrink-0 ${badge.bg}`}>
                         {badge.emoji} {meal.mealCategory}
                       </span>
-                      <span className={`text-xs sm:text-sm font-black ${isDone ? "line-through text-slate-400" : "text-slate-900"} truncate`}>
+                      <span className={`text-xs sm:text-sm font-black leading-tight ${isDone ? "line-through text-slate-400" : "text-slate-900"} line-clamp-2 max-w-full break-words`}>
                         {meal.name}
                       </span>
                       {meal.scheduledTime && (
@@ -161,7 +161,7 @@ export const MealTodoTracker: React.FC<MealTodoTrackerProps> = ({ dateStr, onOpe
                     </div>
 
                     {/* Macro details */}
-                    <div className="flex items-center space-x-2 text-[11px] font-mono mt-1 text-slate-600 flex-wrap">
+                    <div className="flex items-center gap-x-2 gap-y-0.5 text-[11px] font-mono mt-1 text-slate-600 flex-wrap min-w-0">
                       <span className="font-extrabold text-amber-700">{meal.calories} kcal</span>
                       <span>P: <strong className="text-emerald-700">{meal.protein}g</strong></span>
                       <span>C: <strong className="text-blue-700">{meal.carbs}g</strong></span>
@@ -169,7 +169,7 @@ export const MealTodoTracker: React.FC<MealTodoTrackerProps> = ({ dateStr, onOpe
                     </div>
 
                     {isDone && meal.completedAt && (
-                      <span className="text-[10px] text-emerald-700 font-bold mt-1 block flex items-center">
+                      <span className="text-[10px] text-emerald-700 font-bold mt-1 block flex items-center truncate">
                         <Sparkles className="w-3 h-3 mr-1 inline shrink-0" /> Checked off at {meal.completedAt}
                       </span>
                     )}

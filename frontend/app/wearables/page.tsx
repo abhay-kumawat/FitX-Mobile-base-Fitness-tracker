@@ -244,23 +244,23 @@ export default function WearablesPage() {
           <PillBadge variant="green">Adherence: 95%</PillBadge>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-center font-mono">
-          <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-            <span className="text-[9px] text-slate-500 font-bold block">Week 4</span>
-            <span className="text-xs font-black text-slate-900">73.8 kg</span>
-            <span className="text-[10px] text-sky-700 font-bold block">17.2% BF</span>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center font-mono min-w-0">
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 min-w-0 overflow-hidden">
+            <span className="text-[8.5px] sm:text-[9px] text-slate-500 font-bold block truncate">Week 4</span>
+            <span className="text-xs font-black text-slate-900 truncate block">73.8 kg</span>
+            <span className="text-[9.5px] sm:text-[10px] text-sky-700 font-bold block truncate">17.2% BF</span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-            <span className="text-[9px] text-slate-500 font-bold block">Week 8</span>
-            <span className="text-xs font-black text-slate-900">72.5 kg</span>
-            <span className="text-[10px] text-sky-700 font-bold block">16.2% BF</span>
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 min-w-0 overflow-hidden">
+            <span className="text-[8.5px] sm:text-[9px] text-slate-500 font-bold block truncate">Week 8</span>
+            <span className="text-xs font-black text-slate-900 truncate block">72.5 kg</span>
+            <span className="text-[9.5px] sm:text-[10px] text-sky-700 font-bold block truncate">16.2% BF</span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-            <span className="text-[9px] text-emerald-800 font-black block">Week 12 Target</span>
-            <span className="text-xs font-black text-slate-900">71.2 kg</span>
-            <span className="text-[10px] text-emerald-700 font-black block">15.3% BF</span>
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1 min-w-0 overflow-hidden">
+            <span className="text-[8.5px] sm:text-[9px] text-emerald-800 font-black block truncate">Week 12 Target</span>
+            <span className="text-xs font-black text-slate-900 truncate block">71.2 kg</span>
+            <span className="text-[9.5px] sm:text-[10px] text-emerald-700 font-black block truncate">15.3% BF</span>
           </div>
         </div>
       </div>

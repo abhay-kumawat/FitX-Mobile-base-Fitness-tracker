@@ -100,8 +100,8 @@ export default function MobileFrame({ children }: MobileFrameProps) {
         >
           {/* iOS Dynamic Status Bar (Visible in Frame Mode) */}
           {isFrameMode && (
-            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl px-5 pt-2.5 pb-2 flex items-center justify-between text-xs select-none border-b border-slate-200/80 shrink-0">
-              <span className="font-black font-mono text-[12px] text-slate-900 tracking-tight">9:41</span>
+            <div className="sticky top-0 z-50 bg-[var(--status-bar-bg)] backdrop-blur-xl px-4 pt-2.5 pb-2 flex items-center justify-between text-xs select-none border-b border-[var(--status-bar-border)] text-[var(--status-bar-text)] shrink-0">
+              <span className="font-black font-mono text-[12px] tracking-tight">9:41</span>
 
               {/* Dynamic Island Notch */}
               <div className="w-24 h-4.5 bg-slate-950 rounded-full flex items-center justify-between px-2 shadow-inner">
@@ -113,10 +113,10 @@ export default function MobileFrame({ children }: MobileFrameProps) {
               </div>
 
               {/* Right Status Icons */}
-              <div className="flex items-center space-x-1.5 text-slate-800">
+              <div className="flex items-center space-x-1.5 opacity-90">
                 <Signal className="w-3.5 h-3.5" />
                 <Wifi className="w-3.5 h-3.5" />
-                <Battery className="w-4 h-4 fill-slate-800" />
+                <Battery className="w-4 h-4 fill-current" />
               </div>
             </div>
           )}
@@ -128,8 +128,8 @@ export default function MobileFrame({ children }: MobileFrameProps) {
 
           {/* Bottom iOS Home Bar Indicator */}
           {isFrameMode && (
-            <div className="sticky bottom-0 z-50 bg-gradient-to-t from-white/90 to-transparent pt-3 pb-2 flex justify-center pointer-events-none">
-              <div className="w-32 h-1 bg-slate-400 rounded-full shadow-xs" />
+            <div className="sticky bottom-0 z-50 pt-3 pb-2 flex justify-center pointer-events-none" style={{ background: "var(--home-bar-bg)" }}>
+              <div className="w-32 h-1 rounded-full shadow-xs" style={{ backgroundColor: "var(--home-bar-pill)" }} />
             </div>
           )}
         </div>

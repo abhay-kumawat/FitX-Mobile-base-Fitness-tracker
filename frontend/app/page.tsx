@@ -103,24 +103,24 @@ export default function HomeHubPage() {
           <span className="text-xs font-bold text-slate-500">8 Integrated Services</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 min-w-0">
           {featureLaunchers.map((item, idx) => {
             const IconComp = item.icon;
             return (
               <Link
                 key={idx}
                 href={item.href}
-                className="p-3.5 rounded-2xl bg-white border border-slate-200/90 hover:border-emerald-500/50 flex flex-col gap-2 shadow-xs transition-all hover:scale-[1.02] active:scale-98 group"
+                className="p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200/90 hover:border-emerald-500/50 flex flex-col gap-2 shadow-xs transition-all hover:scale-[1.02] active:scale-98 group min-w-0"
               >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border ${item.color}`}>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shrink-0 ${item.color}`}>
                   <IconComp className="w-4 h-4" />
                 </div>
-                <div>
-                  <h4 className="text-xs font-extrabold text-slate-900 group-hover:text-emerald-700 flex items-center justify-between">
-                    {item.name}
-                    <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-emerald-600" />
+                <div className="min-w-0">
+                  <h4 className="text-[11px] sm:text-xs font-extrabold text-slate-900 group-hover:text-emerald-700 flex items-center justify-between gap-1 min-w-0">
+                    <span className="truncate">{item.name}</span>
+                    <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 shrink-0" />
                   </h4>
-                  <p className="text-[10px] font-medium text-slate-500 mt-0.5 leading-tight">
+                  <p className="text-[10px] font-medium text-slate-500 mt-0.5 leading-tight line-clamp-2">
                     {item.desc}
                   </p>
                 </div>

@@ -167,8 +167,8 @@ export const SupplementTracker: React.FC<SupplementTrackerProps> = ({ dateStr })
                   </button>
 
                   <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                      <span className={`text-xs sm:text-sm font-black leading-snug whitespace-normal break-words inline-block ${isDone ? "line-through text-slate-400" : "text-slate-900"}`}>
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
+                      <span className={`text-xs sm:text-sm font-black leading-snug break-words max-w-full ${isDone ? "line-through text-slate-400" : "text-slate-900"}`}>
                         {supp.name}
                       </span>
                       <span className="px-2 py-0.5 text-[10px] font-black bg-purple-100/80 text-purple-800 rounded-lg border border-purple-300 shrink-0 font-mono">
@@ -176,8 +176,8 @@ export const SupplementTracker: React.FC<SupplementTrackerProps> = ({ dateStr })
                       </span>
                     </div>
 
-                    <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-500 flex-wrap gap-y-1">
-                      <span className={`px-2 py-0.2 rounded-md border text-[10px] font-bold ${badge.bg}`}>
+                    <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-500 flex-wrap gap-y-1 min-w-0">
+                      <span className={`px-2 py-0.2 rounded-md border text-[10px] font-bold shrink-0 ${badge.bg}`}>
                         {badge.emoji} {supp.timing}
                       </span>
                       {supp.scheduledTime && (

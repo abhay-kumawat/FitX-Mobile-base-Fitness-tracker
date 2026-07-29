@@ -118,37 +118,37 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-2xl bg-white border-t-2 sm:border-2 border-slate-300 rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl bg-white border-t-2 sm:border-2 border-slate-300 rounded-t-3xl sm:rounded-3xl p-4 sm:p-5 space-y-3 sm:space-y-4 shadow-2xl max-h-[88vh] flex flex-col min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center space-x-2">
-            <h3 className="text-base font-black text-slate-900 flex items-center">
-              <Sparkles className="w-5 h-5 mr-1.5 text-emerald-600" /> Scientific Food Library & Search
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
+          <div className="flex items-center space-x-2 min-w-0">
+            <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center truncate">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 text-emerald-600 shrink-0" /> <span className="truncate">Scientific Food Library & Search</span>
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-700 transition-colors rounded-lg"
+            className="p-1 text-slate-400 hover:text-slate-700 transition-colors rounded-lg shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200">
+        <div className="flex border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("search")}
-            className={`pb-2.5 px-4 text-xs font-black border-b-2 transition-all ${
+            className={`pb-2.5 px-3 sm:px-4 text-xs font-black border-b-2 transition-all whitespace-nowrap ${
               activeTab === "search"
                 ? "border-emerald-600 text-emerald-700"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            🔍 Search Pre-Populated Database ({foods.length})
+            🔍 Search Database ({foods.length})
           </button>
           <button
             onClick={() => setActiveTab("custom")}
-            className={`pb-2.5 px-4 text-xs font-black border-b-2 transition-all ${
+            className={`pb-2.5 px-3 sm:px-4 text-xs font-black border-b-2 transition-all whitespace-nowrap ${
               activeTab === "custom"
                 ? "border-emerald-600 text-emerald-700"
                 : "border-transparent text-slate-500 hover:text-slate-800"
@@ -161,7 +161,7 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
         {activeTab === "search" ? (
           <>
             {/* Search Input & Serving Multiplier */}
-            <div className="space-y-3">
+            <div className="space-y-3 shrink-0">
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
                 <input
@@ -174,13 +174,13 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
               </div>
 
               {/* Meal Slot & Multiplier Controls */}
-              <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2.5">
-                <div className="flex items-center space-x-2">
-                  <label className="text-[11px] font-bold text-slate-600">Assign To Meal:</label>
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2.5 min-w-0">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <label className="text-[11px] font-bold text-slate-600 shrink-0">Assign To:</label>
                   <select
                     value={selectedMealCategory}
                     onChange={(e) => setSelectedMealCategory(e.target.value as MealCategory)}
-                    className="p-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800"
+                    className="p-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 shrink-0"
                   >
                     <option value="Breakfast">🌅 Breakfast</option>
                     <option value="Lunch">🥗 Lunch</option>
@@ -189,8 +189,8 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
                   </select>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <label className="text-[11px] font-bold text-slate-600">Portion Scalar:</label>
+                <div className="flex items-center space-x-2 shrink-0">
+                  <label className="text-[11px] font-bold text-slate-600 shrink-0">Portion:</label>
                   <div className="flex items-center space-x-1 font-mono">
                     {[0.5, 1.0, 1.5, 2.0].map((m) => (
                       <button
@@ -210,7 +210,7 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
               </div>
 
               {/* Category Filter Pills */}
-              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
                 {categories.map((cat) => (
                   <button
                     key={cat}
@@ -228,7 +228,7 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
             </div>
 
             {/* Food Items List */}
-            <div className="overflow-y-auto flex-1 space-y-2 pr-1 max-h-[45vh]">
+            <div className="overflow-y-auto flex-1 min-h-0 space-y-2 pr-1">
               {filteredFoods.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl space-y-2">
                   <p className="text-xs font-bold text-slate-500">No matching food item found.</p>
@@ -243,39 +243,38 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
                 filteredFoods.map((food) => (
                   <div
                     key={food.id}
-                    className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-emerald-400 transition-all flex items-center justify-between group shadow-sm hover:shadow"
+                    className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-emerald-400 transition-all flex items-center justify-between gap-2 group shadow-sm hover:shadow min-w-0"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg border ${food.badgeBg || "bg-slate-100 border-slate-200"}`}>
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg border shrink-0 ${food.badgeBg || "bg-slate-100 border-slate-200"}`}>
                         {food.badgeEmoji}
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-black text-slate-900">{food.name}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <span className="text-xs font-black text-slate-900 truncate">{food.name}</span>
                           {food.isCustom && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-purple-100 text-purple-700 rounded border border-purple-200">
+                            <span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-purple-100 text-purple-700 rounded border border-purple-200 shrink-0">
                               Custom
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] text-slate-400 font-mono block">
-                          Base Serving: {food.servingUnit} ({food.category})
+                        <span className="text-[10.5px] text-slate-400 font-mono block truncate">
+                          Base: {food.servingUnit} ({food.category})
                         </span>
-                        <div className="flex items-center space-x-2 text-[11px] font-mono mt-0.5">
+                        <div className="flex items-center space-x-2 text-[11px] font-mono mt-0.5 flex-wrap">
                           <span className="font-extrabold text-amber-600">
                             {Math.round(food.calories * multiplier)} kcal
                           </span>
                           <span className="text-emerald-700">P: {Math.round(food.protein * multiplier)}g</span>
                           <span className="text-blue-700">C: {Math.round(food.carbs * multiplier)}g</span>
                           <span className="text-purple-700">F: {Math.round(food.fat * multiplier)}g</span>
-                          <span className="text-slate-400">Fiber: {Math.round(food.fiber * multiplier)}g</span>
                         </div>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleAddFood(food)}
-                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-black hover:bg-emerald-600 hover:text-white transition-all flex items-center space-x-1 shadow-sm active:scale-95"
+                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-black hover:bg-emerald-600 hover:text-white transition-all flex items-center space-x-1 shadow-sm active:scale-95 shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add</span>
@@ -287,7 +286,7 @@ export const FoodSearchModal: React.FC<FoodSearchModalProps> = ({
           </>
         ) : (
           /* Custom Food Creation Form */
-          <form onSubmit={handleCreateCustomFood} className="space-y-3 overflow-y-auto flex-1 pr-1">
+          <form onSubmit={handleCreateCustomFood} className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-start space-x-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>

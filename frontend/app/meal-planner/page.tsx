@@ -22,6 +22,9 @@ import { SupplementTracker } from "@/components/nutrition/SupplementTracker";
 import { DietCalendarPlanner } from "@/components/nutrition/DietCalendarPlanner";
 import { NutritionSummaryCard } from "@/components/nutrition/NutritionSummaryCard";
 import { MealComboBuilderModal } from "@/components/nutrition/MealComboBuilderModal";
+import { PlanActionBottomSheet } from "@/components/nutrition/PlanActionBottomSheet";
+import { MealEventModal } from "@/components/nutrition/MealEventModal";
+import { AIMealPlanModal } from "@/components/nutrition/AIMealPlanModal";
 import { soundscape } from "@/lib/soundscapeEngine";
 
 export default function MealPlannerPage() {
@@ -30,10 +33,44 @@ export default function MealPlannerPage() {
 
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [comboModalOpen, setComboModalOpen] = useState(false);
+  const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MealCategory>("Breakfast");
 
-  const { notifications, toggleNotification } = useDietStore();
+  const { notifications, toggleNotification, fetchDashboardForDate, copyPlanToDate, copyRangePlans } = useDietStore();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    fetchDashboardForDate(selectedDateStr);
+  }, [selectedDateStr, fetchDashboardForDate]);
+
+  // Realtime WebSocket Subscription for Live Synchronization
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    try {
+      const wsUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+        .replace(/^http/, "ws") + "/ws/live";
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === "MEAL_UPDATE") {
+            fetchDashboardForDate(selectedDateStr);
+          }
+        } catch (err) {
+          // ignore non-json
+        }
+      };
+    } catch (e) {
+      console.warn("[FitX WebSocket] Connection offline or unavailable:", e);
+    }
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, [selectedDateStr, fetchDashboardForDate]);
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -61,6 +98,36 @@ export default function MealPlannerPage() {
     setSearchModalOpen(true);
   };
 
+  const handleSelectPlanAction = async (actionId: string) => {
+    setPlanSheetOpen(false);
+
+    if (actionId === "SCHEDULE_MEAL" || actionId === "REPEAT_MEAL") {
+      setEventModalOpen(true);
+    } else if (actionId === "APPLY_TEMPLATE") {
+      setComboModalOpen(true);
+    } else if (actionId === "COPY_YESTERDAY") {
+      const yesterday = new Date(selectedDateStr);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      await copyPlanToDate(yesterdayStr, selectedDateStr);
+    } else if (actionId === "COPY_LAST_WEEK") {
+      const cur = new Date(selectedDateStr);
+      const lastWeekStart = new Date(cur);
+      lastWeekStart.setDate(cur.getDate() - 7);
+
+      const fromStart = lastWeekStart.toISOString().split("T")[0];
+      const lastWeekEnd = new Date(lastWeekStart);
+      lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+      const fromEnd = lastWeekEnd.toISOString().split("T")[0];
+
+      await copyRangePlans(fromStart, fromEnd, selectedDateStr);
+    } else if (actionId === "GENERATE_AI") {
+      setAiModalOpen(true);
+    } else if (actionId === "BULK_EDIT") {
+      handleOpenSearch("Breakfast");
+    }
+  };
+
   return (
     <div className="space-y-6 pb-28 animate-smooth-reveal max-w-5xl mx-auto px-2 sm:px-4">
       {/* Top Banner Header */}
@@ -82,11 +149,14 @@ export default function MealPlannerPage() {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => handleOpenSearch("Breakfast")}
+            onClick={() => {
+              soundscape.playTapSound();
+              setEventModalOpen(true);
+            }}
             className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-2xl text-xs flex items-center space-x-1.5 shadow-lg transition-all active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Add Food to Plan</span>
+            <span>Add Meal Event</span>
           </button>
 
           <button
@@ -120,6 +190,7 @@ export default function MealPlannerPage() {
       <DietCalendarPlanner
         currentDateStr={selectedDateStr}
         onSelectDate={(dStr) => setSelectedDateStr(dStr)}
+        onOpenPlanSheet={() => setPlanSheetOpen(true)}
       />
 
       {/* Macro & Micronutrient Summary Card */}
@@ -175,6 +246,29 @@ export default function MealPlannerPage() {
           ))}
         </div>
       </div>
+
+      {/* Plan Action Bottom Sheet Drawer */}
+      <PlanActionBottomSheet
+        isOpen={planSheetOpen}
+        onClose={() => setPlanSheetOpen(false)}
+        onSelectAction={handleSelectPlanAction}
+        currentDateStr={selectedDateStr}
+      />
+
+      {/* Schedulable Meal Event Modal */}
+      <MealEventModal
+        isOpen={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        dateStr={selectedDateStr}
+        defaultCategory={activeCategory}
+      />
+
+      {/* AI Meal Plan Generator Modal */}
+      <AIMealPlanModal
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        dateStr={selectedDateStr}
+      />
 
       {/* Food Search Modal */}
       <FoodSearchModal

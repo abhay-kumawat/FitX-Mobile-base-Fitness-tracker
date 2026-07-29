@@ -154,12 +154,12 @@ export const RecoverySanctuary: React.FC = () => {
           <Activity className="w-4 h-4 text-emerald-600" /> Muscle Group Recovery Grid
         </h3>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 min-w-0">
           {muscles.map((item, idx) => (
-            <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800">{item.name}</span>
-                <span className="text-xs font-black" style={{ color: item.color }}>
+            <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center justify-between gap-1 min-w-0">
+                <span className="text-[11px] sm:text-xs font-extrabold text-slate-800 truncate">{item.name}</span>
+                <span className="text-xs font-black shrink-0" style={{ color: item.color }}>
                   {item.score}%
                 </span>
               </div>
@@ -169,7 +169,7 @@ export const RecoverySanctuary: React.FC = () => {
                   style={{ width: `${item.score}%`, backgroundColor: item.color }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-slate-500">{item.status}</span>
+              <span className="text-[10px] font-bold text-slate-500 truncate">{item.status}</span>
             </div>
           ))}
         </div>

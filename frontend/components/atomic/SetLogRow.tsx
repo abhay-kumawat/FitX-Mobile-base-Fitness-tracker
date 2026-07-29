@@ -43,15 +43,15 @@ export const SetLogRow: React.FC<SetLogRowProps> = ({ exerciseId, setIndex, set 
 
   return (
     <div
-      className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all min-w-0 max-w-full gap-1.5 ${
+      className={`flex items-center justify-between p-2 sm:p-2.5 rounded-2xl border transition-all min-w-0 max-w-full gap-1 sm:gap-2 ${
         isCompleted
           ? "bg-emerald-50 border-emerald-300 shadow-xs"
           : "bg-slate-50 border-slate-200 hover:border-slate-300"
       }`}
     >
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <span
-          className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black ${
+          className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-[10px] sm:text-[11px] font-black ${
             set.type === "warmup"
               ? "bg-amber-100 text-amber-800 border border-amber-300"
               : "bg-slate-200 text-slate-800 border border-slate-300"
@@ -64,13 +64,13 @@ export const SetLogRow: React.FC<SetLogRowProps> = ({ exerciseId, setIndex, set 
           type="button"
           onClick={() => openPlateModal && openPlateModal(set.weightKg || 60)}
           title="Open Plate Loader Calculator"
-          className="p-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
+          className="p-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors shrink-0"
         >
           <Disc className="w-3.5 h-3.5 text-emerald-600" />
         </button>
       </div>
 
-      <div className="flex items-center gap-2 min-w-0 shrink">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 justify-end">
         <NumberStepper
           value={set.weightKg || 0}
           onChange={(w) => updateSetInput && updateSetInput(exerciseId, setIndex, w, set.reps || 0)}
@@ -88,17 +88,17 @@ export const SetLogRow: React.FC<SetLogRowProps> = ({ exerciseId, setIndex, set 
         />
 
         <div className="flex flex-col items-center shrink-0">
-          <span className="text-[10px] font-extrabold text-slate-500 mb-0.5 tracking-wider uppercase">Done</span>
+          <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-500 mb-0.5 tracking-wider uppercase">Done</span>
           <button
             type="button"
             onClick={handleToggle}
-            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-all ${
               isCompleted
                 ? "bg-emerald-500 text-white border-b-2 border-emerald-700 scale-105 shadow-xs"
                 : "bg-slate-200 text-slate-600 border-b-2 border-slate-300 hover:bg-slate-300"
             }`}
           >
-            <Check className={`w-4 h-4 stroke-[3] ${isCompleted ? "animate-bounce" : ""}`} />
+            <Check className={`w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3] ${isCompleted ? "animate-bounce" : ""}`} />
           </button>
         </div>
       </div>

@@ -129,20 +129,20 @@ export const MealComboBuilderModal: React.FC<MealComboBuilderModalProps> = ({
 
         {/* Existing Combos */}
         {combos.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 shrink-0">
             <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block">
               Saved Preset Recipes
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto pr-1">
               {combos.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => handleLogExistingCombo(c)}
-                  className="px-3 py-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-500 hover:text-white rounded-xl text-xs font-bold text-amber-900 flex items-center space-x-1.5 transition-all shadow-2xs"
+                  className="px-3 py-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-500 hover:text-white rounded-xl text-xs font-bold text-amber-900 flex items-center space-x-1.5 transition-all shadow-2xs shrink-0 max-w-full"
                 >
-                  <span>{c.badgeEmoji}</span>
-                  <span>{c.name} ({c.totalCalories} kcal)</span>
-                  <Plus className="w-3.5 h-3.5" />
+                  <span className="shrink-0">{c.badgeEmoji}</span>
+                  <span className="truncate">{c.name} ({c.totalCalories} kcal)</span>
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
                 </button>
               ))}
             </div>

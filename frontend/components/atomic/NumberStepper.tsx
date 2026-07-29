@@ -38,26 +38,26 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center min-w-0">
-      {label && <span className="text-[10px] font-extrabold text-slate-500 mb-0.5 tracking-wider uppercase">{label}</span>}
-      <div className="flex items-center gap-1 bg-slate-100 border border-slate-300 rounded-xl p-0.5 shadow-inner min-w-0">
+    <div className="flex flex-col items-center min-w-0 flex-1">
+      {label && <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-500 mb-0.5 tracking-wider uppercase truncate max-w-full">{label}</span>}
+      <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 border border-slate-300 rounded-xl p-0.5 shadow-inner min-w-0 w-full justify-between">
         <button
           type="button"
           onClick={handleDecrement}
-          className="w-7 h-7 rounded-lg bg-slate-200 hover:bg-slate-300 active:scale-90 text-slate-800 flex items-center justify-center font-black transition-transform shrink-0"
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-200 hover:bg-slate-300 active:scale-90 text-slate-800 flex items-center justify-center font-black transition-transform shrink-0"
         >
           <Minus className="w-3 h-3" />
         </button>
 
-        <div className="min-w-[40px] text-center px-0.5 truncate">
+        <div className="min-w-[30px] sm:min-w-[38px] text-center px-0.5 truncate flex-1">
           <span className="text-xs font-black tracking-tight text-slate-900">{safeValue}</span>
-          <span className="text-[9px] font-bold text-slate-500 ml-0.5">{unit}</span>
+          <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-500 ml-0.5">{unit}</span>
         </div>
 
         <button
           type="button"
           onClick={handleIncrement}
-          className="w-7 h-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:scale-90 text-white flex items-center justify-center font-black transition-transform shadow-xs shrink-0"
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:scale-90 text-white flex items-center justify-center font-black transition-transform shadow-xs shrink-0"
         >
           <Plus className="w-3 h-3" />
         </button>

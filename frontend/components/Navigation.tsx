@@ -181,7 +181,7 @@ export default function Navigation() {
       </header>
 
       {/* Floating Crisp Glass Dock Bottom Navigation */}
-      <nav className="fixed bottom-3 left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 h-[64px] px-1 flex justify-between items-center max-w-[390px] mx-auto rounded-full shadow-lg shadow-slate-900/10">
+      <nav className="fixed bottom-3 left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 h-[62px] px-1 flex justify-between items-center w-[calc(100%-1rem)] max-w-[380px] mx-auto rounded-full shadow-lg shadow-slate-900/10">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -194,13 +194,13 @@ export default function Navigation() {
                 isActive ? "" : "hover:bg-slate-100/60"
               }`}
             >
-              <div className={`flex flex-col items-center justify-center w-11 h-11 rounded-full transition-all duration-300 ${
+              <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
                 isActive 
                   ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 scale-105" 
                   : "text-slate-600 group-hover:text-slate-900"
               }`}>
-                <Icon className={`w-4 h-4 ${isActive ? "stroke-[2.5]" : "stroke-2"}`} />
-                <span className={`text-[8.5px] tracking-tight font-extrabold mt-0.5 truncate max-w-full px-0.5 ${isActive ? "text-white" : ""}`}>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "stroke-[2.5]" : "stroke-2"}`} />
+                <span className={`text-[8px] tracking-tight font-extrabold mt-0.5 truncate max-w-full px-0.5 leading-none ${isActive ? "text-white" : ""}`}>
                   {item.label}
                 </span>
               </div>

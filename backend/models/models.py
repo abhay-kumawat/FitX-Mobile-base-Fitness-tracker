@@ -475,4 +475,208 @@ class TemporalEventAudit(Base):
     event = relationship("TemporalEvent", back_populates="audit_logs")
 
 
+# =====================================================================
+# NUTRITION, HYDRATION, SUPPLEMENT & RECIPE MODULE MODELS (TES INTEGRATED)
+# =====================================================================
+
+class FoodItem(Base):
+    __tablename__ = "food_items"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False, index=True)
+    category = Column(String(64), nullable=False, index=True) # Breakfast, Lunch, Dinner, Snacks, Proteins, Carbs & Grains, Vegetables & Greens, Healthy Fats & Nuts, Dairy & Alternatives, Supplements & Meds
+    serving_size = Column(String(128), default="100g")
+    serving_weight_g = Column(Float, default=100.0)
+    calories = Column(Integer, default=0)
+    protein_g = Column(Float, default=0.0)
+    carbs_g = Column(Float, default=0.0)
+    net_carbs_g = Column(Float, default=0.0)
+    fat_g = Column(Float, default=0.0)
+    sat_fat_g = Column(Float, default=0.0)
+    unsat_fat_g = Column(Float, default=0.0)
+    fiber_g = Column(Float, default=0.0)
+    sugar_g = Column(Float, default=0.0)
+    sodium_mg = Column(Float, default=0.0)
+    potassium_mg = Column(Float, default=0.0)
+    calcium_mg = Column(Float, default=0.0)
+    iron_mg = Column(Float, default=0.0)
+    vitamin_a_iu = Column(Float, default=0.0)
+    vitamin_c_mg = Column(Float, default=0.0)
+    vitamin_d_iu = Column(Float, default=0.0)
+    vitamin_b_complex_mg = Column(Float, default=0.0)
+    magnesium_mg = Column(Float, default=0.0)
+    zinc_mg = Column(Float, default=0.0)
+    phosphorus_mg = Column(Float, default=0.0)
+    water_g = Column(Float, default=0.0)
+    cholesterol_mg = Column(Float, default=0.0)
+    brand = Column(String(128), default="Generic")
+    search_keywords = Column(JSON, default=list) # e.g. ["roti", "chapati", "fulka"]
+    aliases = Column(JSON, default=list) # e.g. ["Wheat Roti"]
+    regional_names = Column(String(255), default="") # e.g. "Roti (Hindi), Chapati (Marathi)"
+    future_ai_metadata = Column(JSON, default=dict)
+    micronutrients = Column(JSON, default=dict)
+    badge_emoji = Column(String(16), default="🥗")
+    verified = Column(Boolean, default=True)
+    is_custom = Column(Boolean, default=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class FavoriteFood(Base):
+    __tablename__ = "favorite_foods"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    food_id = Column(String(64), ForeignKey("food_items.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class RecentFood(Base):
+    __tablename__ = "recent_foods"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    food_id = Column(String(64), ForeignKey("food_items.id"), nullable=False, index=True)
+    last_used_at = Column(DateTime, default=datetime.utcnow, index=True)
+    frequency_count = Column(Integer, default=1)
+
+class RecipeItem(Base):
+    __tablename__ = "recipe_items"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    serving_size = Column(String(64), default="1 serving")
+    prep_time_min = Column(Integer, default=15)
+    total_calories = Column(Integer, default=0)
+    total_protein = Column(Float, default=0.0)
+    total_carbs = Column(Float, default=0.0)
+    total_fat = Column(Float, default=0.0)
+    total_fiber = Column(Float, default=0.0)
+    badge_emoji = Column(String(16), default="🍲")
+    instructions = Column(JSON, default=list) # List of instruction strings
+    ingredients = Column(JSON, default=list) # [{ food_id, name, quantity_g, calories, protein, carbs, fat }]
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class MealComboModel(Base):
+    __tablename__ = "meal_combos"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    items = Column(JSON, default=list) # [{ foodId, quantity }]
+    total_calories = Column(Integer, default=0)
+    total_protein = Column(Float, default=0.0)
+    total_carbs = Column(Float, default=0.0)
+    total_fat = Column(Float, default=0.0)
+    badge_emoji = Column(String(16), default="🍱")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DailyNutritionLog(Base):
+    __tablename__ = "daily_nutrition_logs"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    meal_category = Column(String(64), nullable=False, index=True) # Breakfast, Lunch, Dinner, Snacks
+    food_id = Column(String(64), nullable=True)
+    name = Column(String(255), nullable=False)
+    serving_multiplier = Column(Float, default=1.0)
+    calories = Column(Integer, default=0)
+    protein = Column(Float, default=0.0)
+    carbs = Column(Float, default=0.0)
+    fat = Column(Float, default=0.0)
+    fiber = Column(Float, default=0.0)
+    sodium_mg = Column(Float, default=0.0)
+    potassium_mg = Column(Float, default=0.0)
+    badge_emoji = Column(String(16), default="🍽️")
+    status = Column(String(32), default="pending", index=True) # pending, completed, skipped
+    scheduled_time = Column(String(16), nullable=True) # e.g. "08:30"
+    completed_at = Column(String(32), nullable=True) # ISO string or formatted timestamp
+    temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True)
+    notes = Column(Text, nullable=True)
+    auto_copy_flags = Column(JSON, default=dict)
+    linked_recipe_id = Column(String(64), nullable=True)
+    linked_supplements = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DailyHydrationLog(Base):
+    __tablename__ = "daily_hydration_logs"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    liquid_type = Column(String(64), nullable=False) # Water, Electrolytes, Protein Shake, Tea & Coffee, Fresh Juice
+    volume_ml = Column(Integer, nullable=False, default=250)
+    emoji = Column(String(16), default="💧")
+    timestamp = Column(String(32), nullable=False) # ISO or formatted time
+    temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DailySupplementLog(Base):
+    __tablename__ = "daily_supplement_logs"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    name = Column(String(255), nullable=False)
+    dosage = Column(String(64), nullable=False, default="1 serving") # e.g. "5g", "1 pill"
+    timing = Column(String(64), nullable=False, default="Morning") # Morning, With Meals, Pre-Workout, Post-Workout, Bedtime
+    scheduled_time = Column(String(16), default="08:00")
+    status = Column(String(32), default="pending", index=True) # pending, completed, skipped
+    completed_at = Column(String(32), nullable=True)
+    badge_emoji = Column(String(16), default="💊")
+    temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DailyNutritionSummary(Base):
+    __tablename__ = "daily_nutrition_summaries"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    total_calories = Column(Integer, default=0)
+    target_calories = Column(Integer, default=2200)
+    total_protein = Column(Float, default=0.0)
+    target_protein = Column(Float, default=150.0)
+    total_carbs = Column(Float, default=0.0)
+    target_carbs = Column(Float, default=220.0)
+    total_net_carbs = Column(Float, default=0.0)
+    total_fat = Column(Float, default=0.0)
+    target_fat = Column(Float, default=70.0)
+    total_sat_fat = Column(Float, default=0.0)
+    total_unsat_fat = Column(Float, default=0.0)
+    total_fiber = Column(Float, default=0.0)
+    target_fiber = Column(Float, default=30.0)
+    total_sugar = Column(Float, default=0.0)
+    total_sodium_mg = Column(Float, default=0.0)
+    total_potassium_mg = Column(Float, default=0.0)
+    total_cholesterol_mg = Column(Float, default=0.0)
+    total_water_ml = Column(Integer, default=0)
+    target_water_ml = Column(Integer, default=3500)
+    completed_meals = Column(Integer, default=0)
+    total_meals = Column(Integer, default=0)
+    completed_supplements = Column(Integer, default=0)
+    total_supplements = Column(Integer, default=0)
+    streak_days = Column(Integer, default=0)
+    hypertrophy_match_pct = Column(Float, default=0.0)
+    fat_loss_match_pct = Column(Float, default=0.0)
+    maintenance_match_pct = Column(Float, default=0.0)
+    nutrition_score = Column(Float, default=85.0)
+    deficiency_alerts = Column(JSON, default=list) # Future AI readiness
+    time_compliance_pct = Column(Float, default=100.0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ReminderRule(Base):
+    __tablename__ = "reminder_rules"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    time_str = Column(String(16), nullable=False) # e.g. "08:00"
+    enabled = Column(Boolean, default=True)
+    reminder_type = Column(String(32), nullable=False, default="meal") # meal, water, supplement
+    temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+
 

@@ -10,7 +10,7 @@ interface HydrationTrackerProps {
 }
 
 export const HydrationTracker: React.FC<HydrationTrackerProps> = ({ dateStr }) => {
-  const { hydrationByDate, dailyWaterTargetMl, addLiquid } = useDietStore();
+  const { hydrationByDate, dailyWaterTargetMl, addLiquid, removeLiquid } = useDietStore();
   const [selectedType, setSelectedType] = useState<LiquidType>("Water");
 
   const logs = hydrationByDate[dateStr] || [];
@@ -37,20 +37,20 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({ dateStr }) =
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-start justify-between border-b border-slate-100 pb-3 gap-2 flex-wrap sm:flex-nowrap relative z-10">
+      <div className="flex items-start justify-between border-b border-slate-100 pb-3 gap-2 flex-wrap sm:flex-nowrap relative z-10 min-w-0">
         <div className="flex items-center space-x-2.5 min-w-0 flex-1">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white flex items-center justify-center shadow-md shadow-cyan-500/20 shrink-0">
             <Droplet className="w-5 h-5 fill-current animate-bounce" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm sm:text-base font-black text-slate-900 leading-snug tracking-tight flex items-center gap-1.5">
-              <span>Hydration & Liquidity Sanctuary</span>
+            <h2 className="text-sm sm:text-base font-black text-slate-900 leading-snug tracking-tight flex items-center gap-1.5 truncate">
+              <span className="truncate">Hydration & Liquidity Sanctuary</span>
             </h2>
-            <p className="text-[11px] font-bold text-slate-500 leading-tight">Track water, electrolytes, and shakes</p>
+            <p className="text-[11px] font-bold text-slate-500 leading-tight truncate">Track water, electrolytes, and shakes</p>
           </div>
         </div>
 
-        <div className="text-right shrink-0 bg-cyan-50/80 border border-cyan-200/80 rounded-2xl px-3 py-1.5 font-mono">
+        <div className="text-right shrink-0 bg-cyan-50/80 border border-cyan-200/80 rounded-2xl px-3 py-1.5 font-mono max-w-full">
           <span className="text-xs sm:text-sm font-black text-cyan-800 block">
             {currentTotalMl} / {dailyWaterTargetMl} ml
           </span>
@@ -133,12 +133,23 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({ dateStr }) =
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs font-mono flex items-center space-x-2 text-slate-800 shadow-2xs"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs font-mono flex items-center space-x-2 text-slate-800 shadow-2xs group"
               >
                 <span className="text-sm">{log.emoji}</span>
                 <span className="font-black text-slate-900">{log.type}</span>
                 <span className="text-cyan-700 font-black">+{log.volumeMl}ml</span>
                 <span className="text-[10px] text-slate-400">({log.timestamp})</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundscape.playTapSound();
+                    removeLiquid(dateStr, log.id);
+                  }}
+                  className="p-0.5 text-slate-300 hover:text-rose-600 transition-colors rounded shrink-0 ml-1"
+                  title="Undo fluid log"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
           </div>

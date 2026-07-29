@@ -91,23 +91,23 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Custom Light Mode Bar Chart */}
-        <div className="h-44 w-full pt-4 pb-2 flex items-end justify-between px-2 bg-slate-50 rounded-2xl border border-slate-200">
+        <div className="h-44 w-full pt-4 pb-2 flex items-end justify-between px-1 sm:px-2 bg-slate-50 rounded-2xl border border-slate-200 min-w-0">
           {weeklyData.map((d, i) => {
             const heightPercent = (d.volume / maxVolume) * 100;
             return (
-              <div key={i} className="flex flex-col items-center flex-1 space-y-2 group">
-                <span className="text-[9px] font-mono text-emerald-700 font-black opacity-0 group-hover:opacity-100 transition-opacity">
+              <div key={i} className="flex flex-col items-center flex-1 space-y-2 group min-w-0">
+                <span className="text-[8.5px] sm:text-[9px] font-mono text-emerald-700 font-black opacity-0 group-hover:opacity-100 transition-opacity truncate">
                   {d.volume}
                 </span>
 
-                <div className="w-6 bg-slate-200 rounded-t-lg h-32 relative overflow-hidden flex items-end">
+                <div className="w-5 sm:w-6 bg-slate-200 rounded-t-lg h-32 relative overflow-hidden flex items-end shrink-0">
                   <div
                     className="w-full bg-gradient-to-t from-emerald-500 via-emerald-400 to-amber-400 rounded-t-lg transition-all duration-700 shadow-xs"
                     style={{ height: `${heightPercent}%` }}
                   />
                 </div>
 
-                <span className="text-[10px] font-mono text-slate-600 font-bold">{d.day}</span>
+                <span className="text-[9.5px] sm:text-[10px] font-mono text-slate-600 font-bold truncate">{d.day}</span>
               </div>
             );
           })}
