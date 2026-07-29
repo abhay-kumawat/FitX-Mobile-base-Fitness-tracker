@@ -1,9 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Pill, Check, Plus, Clock, Trash2, Sparkles, ShieldCheck } from "lucide-react";
+import { Pill, Check, Plus, Clock, Trash2, ShieldCheck } from "lucide-react";
 import { useDietStore, SupplementTiming } from "@/store/useDietStore";
 import { soundscape } from "@/lib/soundscapeEngine";
+import {
+  ResponsiveCard,
+  AdaptiveBadge,
+  FlexibleRow,
+  FlexibleGrid,
+  FlexibleStack,
+  AdaptiveHeading,
+  AdaptiveText,
+  ResponsiveIconContainer,
+  SmartButton,
+} from "@/components/ui/primitives";
 
 interface SupplementTrackerProps {
   dateStr: string;
@@ -19,7 +30,6 @@ export const SupplementTracker: React.FC<SupplementTrackerProps> = ({ dateStr })
   const [isAdding, setIsAdding] = useState(false);
 
   const supps = supplementsByDate[dateStr] || [];
-  const completedCount = supps.filter((s) => s.status === "completed").length;
 
   const handleToggle = (id: string) => {
     soundscape.playTapSound();
@@ -44,167 +54,170 @@ export const SupplementTracker: React.FC<SupplementTrackerProps> = ({ dateStr })
     setIsAdding(false);
   };
 
-  const timingBadges: Record<SupplementTiming, { emoji: string; bg: string }> = {
-    Morning: { emoji: "🌅", bg: "bg-amber-100 text-amber-800 border-amber-300" },
-    "With Meals": { emoji: "🥗", bg: "bg-emerald-100 text-emerald-800 border-emerald-300" },
-    "Pre-Workout": { emoji: "🔥", bg: "bg-rose-100 text-rose-800 border-rose-300" },
-    "Post-Workout": { emoji: "🥛", bg: "bg-purple-100 text-purple-800 border-purple-300" },
-    Bedtime: { emoji: "🌙", bg: "bg-indigo-100 text-indigo-800 border-indigo-300" },
+  const timingBadges: Record<SupplementTiming, { emoji: string; variant: "amber" | "emerald" | "rose" | "purple" | "blue" }> = {
+    Morning: { emoji: "🌅", variant: "amber" },
+    "With Meals": { emoji: "🥗", variant: "emerald" },
+    "Pre-Workout": { emoji: "🔥", variant: "rose" },
+    "Post-Workout": { emoji: "🥛", variant: "purple" },
+    Bedtime: { emoji: "🌙", variant: "blue" },
   };
 
   return (
-    <div className="duo-card p-4 sm:p-5 bg-white border-2 border-slate-200/90 rounded-3xl shadow-sm space-y-4 max-w-full overflow-hidden relative">
-      {/* Background Glow Accent */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400/10 rounded-full blur-2xl pointer-events-none" />
+    <ResponsiveCard variant="default" padding="normal" radius="3xl">
+      <FlexibleStack gap="md">
+        {/* Header */}
+        <FlexibleRow justify="between" align="center" gap="sm">
+          <FlexibleRow justify="start" align="center" gap="xs" className="flex-1 min-w-0">
+            <ResponsiveIconContainer size="sm" variant="purple">
+              <Pill className="w-4 h-4 text-purple-600" />
+            </ResponsiveIconContainer>
+            <div className="min-w-0 flex-1">
+              <AdaptiveHeading level={3} className="truncate">
+                Medicine & Supplement Schedule
+              </AdaptiveHeading>
+              <AdaptiveText size="xs" variant="muted" className="mt-0.5">
+                Track daily doses, timing slots, and medication check-offs
+              </AdaptiveText>
+            </div>
+          </FlexibleRow>
 
-      {/* Header */}
-      <div className="flex items-start justify-between border-b border-slate-100 pb-3 gap-2 flex-wrap sm:flex-nowrap relative z-10">
-        <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
-            <Pill className="w-5 h-5 stroke-[2.5]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm sm:text-base font-black text-slate-900 leading-snug tracking-tight flex items-center gap-1.5">
-              <span>Medicine, Gym Supplement & Drug Engine</span>
-            </h2>
-            <p className="text-[11px] font-bold text-slate-500 leading-tight">Track daily doses, timing slots, and medication check-offs</p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAdding(!isAdding)}
-          className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black transition-all flex items-center space-x-1.5 shadow-md shadow-purple-500/20 active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4 shrink-0" />
-          <span>{isAdding ? "Cancel" : "Add Supp"}</span>
-        </button>
-      </div>
-
-      {/* Add Supplement Form Drawer */}
-      {isAdding && (
-        <form onSubmit={handleAdd} className="p-3.5 bg-purple-50/80 border border-purple-200/90 rounded-2xl space-y-2.5 font-mono relative z-10 animate-smooth-reveal">
-          <div className="flex items-center space-x-1.5 text-xs font-black text-purple-900">
-            <ShieldCheck className="w-4 h-4 text-purple-600" />
-            <span>Add Medication or Gym Supplement</span>
-          </div>
-
-          <input
-            type="text"
-            required
-            placeholder="Supplement / Medication Name (e.g. Creatine, Omega-3)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-sans"
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input
-              type="text"
-              placeholder="Dosage (5g / 1 pill)"
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-              className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-sans"
-            />
-            <select
-              value={timing}
-              onChange={(e) => setTiming(e.target.value as SupplementTiming)}
-              className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-sans"
-            >
-              <option value="Morning">🌅 Morning</option>
-              <option value="With Meals">🥗 With Meals</option>
-              <option value="Pre-Workout">🔥 Pre-Workout</option>
-              <option value="Post-Workout">🥛 Post-Workout</option>
-              <option value="Bedtime">🌙 Bedtime</option>
-            </select>
-            <input
-              type="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-              className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black hover:bg-purple-700 transition-all shadow-md active:scale-98"
+          <SmartButton
+            variant="purple"
+            size="sm"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsAdding(!isAdding)}
           >
-            ✨ Save Supplement / Drug Schedule
-          </button>
-        </form>
-      )}
+            {isAdding ? "Cancel" : "Add Supp"}
+          </SmartButton>
+        </FlexibleRow>
 
-      {/* Checkable List */}
-      <div className="space-y-2.5 relative z-10">
-        {supps.length === 0 ? (
-          <p className="text-xs text-slate-400 italic text-center py-4">No supplements or medications scheduled for today.</p>
-        ) : (
-          supps.map((supp) => {
-            const isDone = supp.status === "completed";
-            const badge = timingBadges[supp.timing] || { emoji: "💊", bg: "bg-slate-100 text-slate-800 border-slate-200" };
+        {/* Add Supplement Drawer */}
+        {isAdding && (
+          <ResponsiveCard variant="subtle" padding="compact" radius="2xl" className="border-purple-200 bg-purple-50/70">
+            <form onSubmit={handleAdd} className="space-y-2.5">
+              <FlexibleRow justify="start" align="center" gap="xs" className="text-xs font-black text-purple-900">
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
+                <span>Add Medication or Supplement</span>
+              </FlexibleRow>
 
-            return (
-              <div
-                key={supp.id}
-                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 max-w-full overflow-hidden ${
-                  isDone
-                    ? "bg-purple-50/70 border-purple-200/90 opacity-90 shadow-none"
-                    : "bg-white border-slate-200/90 hover:border-purple-300 shadow-2xs"
-                }`}
-              >
-                <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  {/* Interactive Checkmark Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(supp.id)}
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all shrink-0 ${
-                      isDone
-                        ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30 scale-105"
-                        : "border-2 border-slate-300 hover:border-purple-500 text-transparent"
-                    }`}
-                  >
-                    <Check className="w-4 h-4 stroke-[3]" />
-                  </button>
+              <input
+                type="text"
+                required
+                placeholder="Supplement / Medication Name (e.g. Creatine, Omega-3)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-sans"
+              />
 
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
-                      <span className={`text-xs sm:text-sm font-black leading-snug break-words max-w-full ${isDone ? "line-through text-slate-400" : "text-slate-900"}`}>
-                        {supp.name}
-                      </span>
-                      <span className="px-2 py-0.5 text-[10px] font-black bg-purple-100/80 text-purple-800 rounded-lg border border-purple-300 shrink-0 font-mono">
-                        {supp.dosage}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-500 flex-wrap gap-y-1 min-w-0">
-                      <span className={`px-2 py-0.2 rounded-md border text-[10px] font-bold shrink-0 ${badge.bg}`}>
-                        {badge.emoji} {supp.timing}
-                      </span>
-                      {supp.scheduledTime && (
-                        <span className="flex items-center text-slate-400 shrink-0">
-                          <Clock className="w-3 h-3 mr-0.5 inline text-slate-400" /> {supp.scheduledTime}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundscape.playTapSound();
-                    removeSupplement(dateStr, supp.id);
-                  }}
-                  className="p-1.5 text-slate-300 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50 shrink-0"
-                  title="Delete supplement"
+              <FlexibleGrid minItemWidth={120} gap="xs">
+                <input
+                  type="text"
+                  placeholder="Dosage (5g / 1 pill)"
+                  value={dosage}
+                  onChange={(e) => setDosage(e.target.value)}
+                  className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-sans"
+                />
+                <select
+                  value={timing}
+                  onChange={(e) => setTiming(e.target.value as SupplementTiming)}
+                  className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-sans"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            );
-          })
+                  <option value="Morning">🌅 Morning</option>
+                  <option value="With Meals">🥗 With Meals</option>
+                  <option value="Pre-Workout">🔥 Pre-Workout</option>
+                  <option value="Post-Workout">🥛 Post-Workout</option>
+                  <option value="Bedtime">🌙 Bedtime</option>
+                </select>
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-mono"
+                />
+              </FlexibleGrid>
+
+              <SmartButton type="submit" variant="purple" size="sm" fullWidth>
+                ✨ Save Supplement / Drug Schedule
+              </SmartButton>
+            </form>
+          </ResponsiveCard>
         )}
-      </div>
-    </div>
+
+        {/* Supplement Cards List */}
+        <FlexibleStack gap="xs">
+          {supps.length === 0 ? (
+            <AdaptiveText size="xs" variant="muted" className="italic text-center py-2">
+              No supplements or medications scheduled for today.
+            </AdaptiveText>
+          ) : (
+            supps.map((supp) => {
+              const isDone = supp.status === "completed";
+              const badge = timingBadges[supp.timing] || { emoji: "💊", variant: "slate" };
+
+              return (
+                <ResponsiveCard
+                  key={supp.id}
+                  variant={isDone ? "subtle" : "default"}
+                  padding="compact"
+                  radius="2xl"
+                  className={`transition-all ${isDone ? "bg-purple-50/40 border-purple-200 opacity-90" : "hover:border-purple-300"}`}
+                >
+                  <FlexibleRow justify="between" align="center" gap="sm">
+                    <FlexibleRow justify="start" align="center" gap="xs" className="flex-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(supp.id)}
+                        className={`w-6 h-6 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center transition-all shrink-0 ${
+                          isDone
+                            ? "bg-purple-600 text-white shadow-xs scale-105"
+                            : "border-2 border-slate-300 hover:border-purple-500 text-transparent"
+                        }`}
+                      >
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      </button>
+
+                      <FlexibleStack gap="xs" className="flex-1 min-w-0">
+                        <FlexibleRow justify="start" align="center" gap="xs">
+                          <span className={`text-xs sm:text-sm font-black break-words ${isDone ? "line-through text-slate-400" : "text-slate-900"}`}>
+                            {supp.name}
+                          </span>
+                          <AdaptiveBadge variant="purple" size="xs">
+                            {supp.dosage}
+                          </AdaptiveBadge>
+                        </FlexibleRow>
+
+                        <FlexibleRow justify="start" align="center" gap="xs" className="text-[11px] font-mono text-slate-500">
+                          <AdaptiveBadge variant={badge.variant} size="xs">
+                            {badge.emoji} {supp.timing}
+                          </AdaptiveBadge>
+
+                          {supp.scheduledTime && (
+                            <span className="flex items-center text-slate-400">
+                              <Clock className="w-3 h-3 mr-0.5 inline" /> {supp.scheduledTime}
+                            </span>
+                          )}
+                        </FlexibleRow>
+                      </FlexibleStack>
+                    </FlexibleRow>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundscape.playTapSound();
+                        removeSupplement(dateStr, supp.id);
+                      }}
+                      className="p-1.5 text-slate-300 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50 shrink-0"
+                      title="Delete supplement"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </FlexibleRow>
+                </ResponsiveCard>
+              );
+            })
+          )}
+        </FlexibleStack>
+      </FlexibleStack>
+    </ResponsiveCard>
   );
 };

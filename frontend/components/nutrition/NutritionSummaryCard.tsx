@@ -1,8 +1,20 @@
 "use client";
 
 import React from "react";
-import { PieChart, Target, Flame, Activity, Zap, ShieldCheck } from "lucide-react";
+import { PieChart, Target, Flame, Activity, Zap } from "lucide-react";
 import { useDietStore } from "@/store/useDietStore";
+import {
+  ResponsiveCard,
+  MetricCard,
+  AdaptiveBadge,
+  FlexibleRow,
+  FlexibleGrid,
+  FlexibleStack,
+  AdaptiveHeading,
+  AdaptiveText,
+  AdaptiveNumber,
+  ResponsiveIconContainer,
+} from "@/components/ui/primitives";
 
 interface NutritionSummaryCardProps {
   dateStr: string;
@@ -23,12 +35,9 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({ date
   const fat = totals.fat || 0;
   const calories = totals.calories || 0;
 
-  const pPct = Math.min(100, Math.round((protein / targetProtein) * 100));
-  const cPct = Math.min(100, Math.round((carbs / targetCarbs) * 100));
-  const fPct = Math.min(100, Math.round((fat / targetFat) * 100));
   const fiberPct = Math.min(100, Math.round(((totals.fiber || 0) / targetFiber) * 100));
 
-  // Calculate Macro Ratios (% of calories)
+  // Calculate Macro Ratios (% of total macro calories)
   const proteinCals = protein * 4;
   const carbCals = carbs * 4;
   const fatCals = fat * 9;
@@ -38,204 +47,158 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({ date
   const carbRatio = Math.round((carbCals / totalMacroCals) * 100);
   const fatRatio = Math.round((fatCals / totalMacroCals) * 100);
 
-  // Goal alignment status
+  // Determine Goal Alignment Status
   let goalStatus = "Optimal Hypertrophy Match";
-  let goalBg = "bg-emerald-500/10 text-emerald-700 border-emerald-300";
+  let goalVariant: "emerald" | "amber" | "purple" = "emerald";
 
   if (calories < targetCalories - 400) {
     goalStatus = "Fat Loss Deficit (Aggressive)";
-    goalBg = "bg-amber-500/10 text-amber-800 border-amber-300";
+    goalVariant = "amber";
   } else if (calories > targetCalories + 300) {
     goalStatus = "Lean Bulking Surplus";
-    goalBg = "bg-purple-500/10 text-purple-800 border-purple-300";
+    goalVariant = "purple";
   }
 
   const remainingCals = targetCalories - calories;
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-3xl p-4 sm:p-6 shadow-sm space-y-5 max-w-full overflow-hidden">
-      {/* Header & Alignment Badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
-        <div>
-          <div className="flex items-center space-x-2 flex-wrap">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center leading-snug">
-              <PieChart className="w-5 h-5 mr-2 text-emerald-600 shrink-0" />
-              <span>Macro & Micronutrient Intelligence Dashboard</span>
-            </h2>
-            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-[11px] font-black uppercase tracking-wide">
-              Live Backend Calculations
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time scientific metabolic intake vs personalized target baseline
-          </p>
-        </div>
-
-        <div className={`px-3 py-1.5 rounded-2xl border text-xs font-black flex items-center space-x-1.5 self-start sm:self-auto shrink-0 ${goalBg}`}>
-          <Target className="w-4 h-4 shrink-0" />
-          <span>{goalStatus}</span>
-        </div>
-      </div>
-
-      {/* Calories Overview Main Dial */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl p-4 sm:p-5 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
-        <div className="space-y-1 text-center md:text-left w-full md:w-auto">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">
-            Total Daily Intake
-          </span>
-          <div className="flex items-baseline space-x-2 justify-center md:justify-start flex-wrap">
-            <span className="text-3xl sm:text-4xl font-black font-mono text-emerald-400">
-              {calories}
-            </span>
-            <span className="text-sm font-bold text-slate-300">
-              / {targetCalories} kcal
-            </span>
-          </div>
-          <span className="text-xs font-bold text-emerald-300 block">
-            {remainingCals > 0
-              ? `${remainingCals} kcal remaining to reach goal`
-              : `${Math.abs(remainingCals)} kcal surplus logged today`}
-          </span>
-        </div>
-
-        {/* Science Score Badges */}
-        <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto">
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-center min-w-[95px]">
-            <span className="text-[9px] font-bold text-slate-400 block uppercase">HYPERTROPHY</span>
-            <span className="text-sm font-black font-mono text-emerald-400">
-              {totals.hypertrophyMatchPct || 88}%
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-center min-w-[95px]">
-            <span className="text-[9px] font-bold text-slate-400 block uppercase">FAT LOSS</span>
-            <span className="text-sm font-black font-mono text-amber-400">
-              {totals.fatLossMatchPct || 92}%
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-center min-w-[95px]">
-            <span className="text-[9px] font-bold text-slate-400 block uppercase">SCORE</span>
-            <span className="text-sm font-black font-mono text-cyan-400">
-              {totals.nutritionScore || 88}/100
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Redesigned Responsive Nutrient Cards (No Clipping, Responsive Heights & Layouts) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* PROTEIN CARD */}
-        <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 border-2 border-emerald-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center">
-              <Zap className="w-3.5 h-3.5 mr-1 text-emerald-600" /> PROTEIN
-            </span>
-            <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-300">
-              {proteinRatio}% kcal
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-black text-emerald-700">{protein}g</span>
-            <span className="text-xs font-bold text-slate-500">Goal: {targetProtein}g</span>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-emerald-600 h-full transition-all duration-500"
-                style={{ width: `${pPct}%` }}
-              />
+    <ResponsiveCard variant="default" padding="normal" radius="3xl">
+      <FlexibleStack gap="md">
+        {/* Header & Alignment Badge */}
+        <FlexibleRow justify="between" align="center" gap="sm">
+          <FlexibleRow justify="start" align="center" gap="xs" className="flex-1 min-w-0">
+            <ResponsiveIconContainer size="sm" variant="emerald">
+              <PieChart className="w-4 h-4 text-emerald-600" />
+            </ResponsiveIconContainer>
+            <div className="min-w-0 flex-1">
+              <FlexibleRow justify="start" align="center" gap="xs">
+                <AdaptiveHeading level={3} className="truncate">
+                  Macro & Micronutrient Intelligence
+                </AdaptiveHeading>
+                <AdaptiveBadge variant="emerald" size="xs">
+                  Live Engine
+                </AdaptiveBadge>
+              </FlexibleRow>
+              <AdaptiveText size="xs" variant="muted" className="mt-0.5">
+                Real-time scientific metabolic intake vs baseline targets
+              </AdaptiveText>
             </div>
-            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-              <span>{pPct}% completed</span>
-              <span>{Math.max(0, targetProtein - protein)}g left</span>
-            </div>
-          </div>
-        </div>
+          </FlexibleRow>
 
-        {/* CARBS CARD */}
-        <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/40 border-2 border-blue-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center">
-              <Flame className="w-3.5 h-3.5 mr-1 text-blue-600" /> CARBS
-            </span>
-            <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-lg border border-blue-300">
-              {carbRatio}% kcal
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-black text-blue-700">{carbs}g</span>
-            <span className="text-xs font-bold text-slate-500">Goal: {targetCarbs}g</span>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-500"
-                style={{ width: `${cPct}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-              <span>{cPct}% completed</span>
-              <span>{Math.max(0, targetCarbs - carbs)}g left</span>
-            </div>
-          </div>
-        </div>
+          <AdaptiveBadge variant={goalVariant} size="sm" icon={<Target className="w-3.5 h-3.5" />}>
+            {goalStatus}
+          </AdaptiveBadge>
+        </FlexibleRow>
 
-        {/* FATS CARD */}
-        <div className="bg-gradient-to-br from-purple-50/70 to-pink-50/40 border-2 border-purple-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center">
-              <Activity className="w-3.5 h-3.5 mr-1 text-purple-600" /> FATS
-            </span>
-            <span className="text-[11px] font-mono font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded-lg border border-purple-300">
-              {fatRatio}% kcal
-            </span>
+        {/* Main Calories Intake Overview Banner */}
+        <ResponsiveCard variant="hero" padding="compact" radius="2xl" elevation="none">
+          <FlexibleRow justify="between" align="center" gap="md">
+            <FlexibleStack gap="xs" className="flex-1 min-w-0">
+              <AdaptiveText size="xs" variant="muted" className="uppercase tracking-widest font-bold text-slate-400">
+                Total Daily Intake
+              </AdaptiveText>
+              <FlexibleRow justify="start" align="baseline" gap="xs">
+                <AdaptiveNumber value={calories} color="emerald" size="xl" />
+                <span className="text-sm font-mono font-bold text-slate-300">
+                  / {targetCalories} kcal
+                </span>
+              </FlexibleRow>
+              <AdaptiveText size="xs" variant="accent" className="text-emerald-300 font-bold">
+                {remainingCals > 0
+                  ? `${remainingCals} kcal remaining to reach target`
+                  : `${Math.abs(remainingCals)} kcal surplus logged today`}
+              </AdaptiveText>
+            </FlexibleStack>
+
+            {/* Science Match Badges */}
+            <FlexibleRow justify="end" align="center" gap="xs" className="shrink-0">
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-center min-w-[85px]">
+                <span className="text-[9px] font-bold text-slate-400 block uppercase">HYPERTROPHY</span>
+                <span className="text-xs font-black font-mono text-emerald-400">
+                  {totals.hypertrophyMatchPct || 88}%
+                </span>
+              </div>
+
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-center min-w-[85px]">
+                <span className="text-[9px] font-bold text-slate-400 block uppercase">FAT LOSS</span>
+                <span className="text-xs font-black font-mono text-amber-400">
+                  {totals.fatLossMatchPct || 92}%
+                </span>
+              </div>
+
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-center min-w-[85px]">
+                <span className="text-[9px] font-bold text-slate-400 block uppercase">SCORE</span>
+                <span className="text-xs font-black font-mono text-cyan-400">
+                  {totals.nutritionScore || 88}/100
+                </span>
+              </div>
+            </FlexibleRow>
+          </FlexibleRow>
+        </ResponsiveCard>
+
+        {/* Adaptive Metric Cards Grid (Protein, Carbs, Fats) */}
+        <FlexibleGrid minItemWidth={160} gap="sm">
+          <MetricCard
+            label="Protein"
+            value={protein}
+            target={targetProtein}
+            unit="g"
+            accentColor="emerald"
+            ratioBadge={`${proteinRatio}% kcal`}
+            icon={<Zap className="w-3.5 h-3.5 text-emerald-600" />}
+            subLabel={`${Math.max(0, targetProtein - protein)}g left`}
+          />
+
+          <MetricCard
+            label="Carbs"
+            value={carbs}
+            target={targetCarbs}
+            unit="g"
+            accentColor="blue"
+            ratioBadge={`${carbRatio}% kcal`}
+            icon={<Flame className="w-3.5 h-3.5 text-blue-600" />}
+            subLabel={`${Math.max(0, targetCarbs - carbs)}g left`}
+          />
+
+          <MetricCard
+            label="Fats"
+            value={fat}
+            target={targetFat}
+            unit="g"
+            accentColor="purple"
+            ratioBadge={`${fatRatio}% kcal`}
+            icon={<Activity className="w-3.5 h-3.5 text-purple-600" />}
+            subLabel={`${Math.max(0, targetFat - fat)}g left`}
+          />
+        </FlexibleGrid>
+
+        {/* Sub-micronutrient Breakdown Bar */}
+        <FlexibleGrid minItemWidth={120} gap="xs">
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 text-center min-w-0">
+            <span className="text-[9.5px] font-bold text-slate-500 block uppercase truncate">DIETARY FIBER</span>
+            <span className="font-black text-slate-900 block text-xs sm:text-sm mt-0.5 font-mono">{totals.fiber}g / {targetFiber}g</span>
+            <span className="text-[9px] font-bold text-emerald-700 block">{fiberPct}% met</span>
           </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-black text-purple-700">{fat}g</span>
-            <span className="text-xs font-bold text-slate-500">Goal: {targetFat}g</span>
+
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 text-center min-w-0">
+            <span className="text-[9.5px] font-bold text-slate-500 block uppercase truncate">NET CARBS</span>
+            <span className="font-black text-slate-900 block text-xs sm:text-sm mt-0.5 font-mono">{totals.netCarbs}g</span>
+            <span className="text-[9px] font-bold text-slate-500 block">Excl. Fiber</span>
           </div>
-          <div className="space-y-1">
-            <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-purple-600 h-full transition-all duration-500"
-                style={{ width: `${fPct}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-              <span>{fPct}% completed</span>
-              <span>{Math.max(0, targetFat - fat)}g left</span>
-            </div>
+
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 text-center min-w-0">
+            <span className="text-[9.5px] font-bold text-slate-500 block uppercase truncate">SODIUM</span>
+            <span className="font-black text-slate-900 block text-xs sm:text-sm mt-0.5 font-mono">{totals.sodiumMg} mg</span>
+            <span className="text-[9px] font-bold text-slate-500 block">Electrolyte</span>
           </div>
-        </div>
-      </div>
 
-      {/* Sub-micronutrient Breakdown Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-xs">
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
-          <span className="text-[9.5px] font-bold text-slate-500 block uppercase">DIETARY FIBER</span>
-          <span className="font-black text-slate-800 block text-sm mt-0.5">{totals.fiber}g / {targetFiber}g</span>
-          <span className="text-[9px] font-bold text-emerald-700 block">{fiberPct}% met</span>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
-          <span className="text-[9.5px] font-bold text-slate-500 block uppercase">NET CARBS</span>
-          <span className="font-black text-slate-800 block text-sm mt-0.5">{totals.netCarbs}g</span>
-          <span className="text-[9px] font-bold text-slate-500 block">Excl. Fiber</span>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
-          <span className="text-[9.5px] font-bold text-slate-500 block uppercase">SODIUM</span>
-          <span className="font-black text-slate-800 block text-sm mt-0.5">{totals.sodiumMg} mg</span>
-          <span className="text-[9px] font-bold text-slate-500 block">Electrolyte</span>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
-          <span className="text-[9.5px] font-bold text-slate-500 block uppercase">SUGAR</span>
-          <span className="font-black text-slate-800 block text-sm mt-0.5">{totals.sugar}g</span>
-          <span className="text-[9px] font-bold text-slate-500 block">Natural & Added</span>
-        </div>
-      </div>
-    </div>
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 text-center min-w-0">
+            <span className="text-[9.5px] font-bold text-slate-500 block uppercase truncate">SUGAR</span>
+            <span className="font-black text-slate-900 block text-xs sm:text-sm mt-0.5 font-mono">{totals.sugar}g</span>
+            <span className="text-[9px] font-bold text-slate-500 block">Natural/Added</span>
+          </div>
+        </FlexibleGrid>
+      </FlexibleStack>
+    </ResponsiveCard>
   );
 };

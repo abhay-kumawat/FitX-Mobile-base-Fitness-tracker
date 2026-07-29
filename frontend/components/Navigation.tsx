@@ -181,7 +181,7 @@ export default function Navigation() {
       </header>
 
       {/* Floating Crisp Glass Dock Bottom Navigation */}
-      <nav className="fixed bottom-3 left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 h-[62px] px-1 flex justify-between items-center w-[calc(100%-1rem)] max-w-[380px] mx-auto rounded-full shadow-lg shadow-slate-900/10">
+      <nav className="fixed bottom-3 left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 min-h-[58px] py-1 px-1.5 flex justify-between items-center w-[calc(100%-1rem)] max-w-[400px] mx-auto rounded-full shadow-lg shadow-slate-900/10">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;

@@ -171,5 +171,46 @@ class TestMealsTESModule(unittest.TestCase):
         self.assertEqual(len(indicators), 3)
         self.assertTrue(indicators[0]["total_meals"] >= 1)
 
+    def test_08_food_search_and_portions(self):
+        from backend.services.meals.meal_engine import search_food_library, toggle_favorite_food, update_meal_item
+
+        # 1. Test dataset seeding count
+        count = seed_food_items_if_empty(self.db)
+        self.assertGreaterEqual(count, 1000)
+
+        # 2. Test food search for Indian staple "roti"
+        search_res = search_food_library(self.db, self.test_user.id, query="roti")
+        self.assertGreaterEqual(search_res["total_count"], 1)
+        first_food = search_res["items"][0]
+        self.assertIn("roti", first_food["name"].lower())
+
+        # 3. Test favorite toggle
+        is_fav = toggle_favorite_food(self.db, self.test_user.id, first_food["id"])
+        self.assertTrue(is_fav)
+
+        fav_res = search_food_library(self.db, self.test_user.id, query="roti", only_favorites=True)
+        self.assertEqual(fav_res["total_count"], 1)
+
+        # 4. Test adding meal and updating portion multiplier
+        date_str = "2026-07-30"
+        meal = add_meal_item(self.db, self.test_user.id, LoggedMealCreate(
+            food_id=first_food["id"],
+            name=first_food["name"],
+            meal_category="Breakfast",
+            serving_multiplier=1.0,
+            calories=first_food["calories"],
+            protein=first_food["protein_g"],
+            carbs=first_food["carbs_g"],
+            fat=first_food["fat_g"],
+            date_str=date_str
+        ))
+        initial_cals = meal.calories
+
+        # Update multiplier to 2.0x
+        updated_meal = update_meal_item(self.db, self.test_user.id, meal.id, serving_multiplier=2.0)
+        self.assertEqual(updated_meal.serving_multiplier, 2.0)
+        self.assertEqual(updated_meal.calories, initial_cals * 2)
+
 if __name__ == "__main__":
     unittest.main()
+
