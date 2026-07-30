@@ -266,54 +266,54 @@ export default function WebsiteLandingPage() {
       </section>
 
       {/* Pricing / Plan Grid */}
-      <section className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 space-y-6 shadow-xl">
+      <section className="p-5 sm:p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 space-y-6 shadow-xl min-w-0">
         <div className="text-center space-y-2">
           <span className="text-xs font-black uppercase text-emerald-400 tracking-wider">Flexible Plans</span>
           <h2 className="text-xl font-black text-white">Choose Your AI Fitness Tier</h2>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
             Includes full Google Authentication and access to all 18 backend microservices.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Free Tier */}
-          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4">
+          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4 min-w-0">
             <div>
-              <span className="text-xs font-black text-slate-400 uppercase">Starter</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-wide">Starter</span>
               <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl font-black text-white">$0</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">$0</span>
                 <span className="text-xs text-slate-400 font-bold">/ forever</span>
               </div>
               <ul className="space-y-2 mt-4 text-xs text-slate-300 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Basic Workout Tracking</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Standard Meal Planner</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Google Single Sign-On</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Basic Workout Tracking</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Standard Meal Planner</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Google Single Sign-On</span></li>
               </ul>
             </div>
             <button
               onClick={handleOpenAuth}
-              className="w-full py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all"
+              className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all active:scale-98"
             >
               Sign Up Free
             </button>
           </div>
 
           {/* Pro Tier (Popular) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/80 to-slate-900 border-2 border-emerald-500 relative flex flex-col justify-between space-y-4 shadow-lg shadow-emerald-500/10">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow-sm">
+          <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/80 to-slate-900 border-2 border-emerald-500 relative flex flex-col justify-between space-y-4 shadow-lg shadow-emerald-500/10 min-w-0">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow-sm whitespace-nowrap">
               Most Popular
             </span>
-            <div>
-              <span className="text-xs font-black text-emerald-400 uppercase">Pro AI Coach</span>
+            <div className="pt-1">
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-wide">Pro AI Coach</span>
               <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl font-black text-white">$9.99</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">$9.99</span>
                 <span className="text-xs text-slate-400 font-bold">/ month</span>
               </div>
               <ul className="space-y-2 mt-4 text-xs text-slate-200 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Adaptive Overload Engine</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> 180px HRV Ring & Telemetry</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Gemini AI Coach Chat</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Google Authenticator 2FA</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Adaptive Overload Engine</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">180px HRV Ring & Telemetry</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Gemini AI Coach Chat</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Google Authenticator 2FA</span></li>
               </ul>
             </div>
             <button
@@ -325,22 +325,22 @@ export default function WebsiteLandingPage() {
           </div>
 
           {/* Enterprise Tier */}
-          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4">
+          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4 min-w-0">
             <div>
-              <span className="text-xs font-black text-slate-400 uppercase">Studio</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-wide">Studio</span>
               <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl font-black text-white">$29.99</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">$29.99</span>
                 <span className="text-xs text-slate-400 font-bold">/ month</span>
               </div>
               <ul className="space-y-2 mt-4 text-xs text-slate-300 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Multi-Client Dashboard</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Custom Biomechanical Rules</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Priority API Access</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Multi-Client Dashboard</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Custom Biomechanical Rules</span></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Priority API Access</span></li>
               </ul>
             </div>
             <button
               onClick={handleOpenAuth}
-              className="w-full py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all"
+              className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all active:scale-98"
             >
               Contact Sales
             </button>
