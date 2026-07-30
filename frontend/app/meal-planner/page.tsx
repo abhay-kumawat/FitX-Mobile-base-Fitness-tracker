@@ -28,6 +28,7 @@ import { AIMealPlanModal } from "@/components/nutrition/AIMealPlanModal";
 import { NutritionAIReviewModal } from "@/components/nutrition/NutritionAIReviewModal";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { useAppState, dispatchAIAction } from "@/lib/state/appStateStore";
+import { AuthGuard } from "@/components/AuthGuard";
 
 export default function MealPlannerPage() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -134,7 +135,8 @@ export default function MealPlannerPage() {
   };
 
   return (
-    <div className="space-y-6 pb-28 animate-smooth-reveal max-w-5xl mx-auto px-2 sm:px-4">
+    <AuthGuard>
+      <div className="space-y-6 pb-28 animate-smooth-reveal max-w-5xl mx-auto px-2 sm:px-4">
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -304,5 +306,6 @@ export default function MealPlannerPage() {
         }}
       />
     </div>
-  );
+  </AuthGuard>
+);
 }

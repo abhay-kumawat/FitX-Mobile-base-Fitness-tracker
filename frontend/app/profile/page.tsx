@@ -7,6 +7,7 @@ import { PillBadge } from "@/components/atomic/PillBadge";
 import { Button3D } from "@/components/atomic/Button3D";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { Cpu, Sliders, Download, ShieldCheck, Dumbbell, Sparkles, X } from "lucide-react";
+import { AuthGuard } from "@/components/AuthGuard";
 
 export default function ProfilePage() {
   const { profile, toggleInjury, toggleEquipment } = useUserStore();
@@ -45,7 +46,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
+    <AuthGuard>
+      <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
       {/* Profile Header & Digital Twin Avatar */}
       <div className="duo-card p-6 bg-white border border-slate-200 flex flex-col items-center text-center gap-3 relative overflow-hidden shadow-xs">
         <MascotVector mood="happy" size={110} />
@@ -239,5 +241,6 @@ export default function ProfilePage() {
         </div>
       )}
     </div>
-  );
+  </AuthGuard>
+);
 }

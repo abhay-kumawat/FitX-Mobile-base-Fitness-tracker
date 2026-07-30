@@ -95,6 +95,14 @@ export default function Navigation() {
     setStreakConfetti(true);
   };
 
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    soundscape.playTapSound();
+    if (!isAuthenticated) {
+      e.preventDefault();
+      setAuthModalOpen(true);
+    }
+  };
+
   return (
     <>
       <ConfettiBurst trigger={streakConfetti} onComplete={() => setStreakConfetti(false)} />
@@ -160,7 +168,7 @@ export default function Navigation() {
       {/* Top Crisp Light Header Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl h-13 flex items-center justify-between mx-auto w-full max-w-full shadow-xs px-3.5 py-2 mb-4 shrink-0 mt-2">
         <div className="flex items-center space-x-2 shrink-0">
-          <Link href="/skill-tree" className="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full hover:scale-105 transition-transform">
+          <Link href="/skill-tree" onClick={(e) => handleNavClick(e, "/skill-tree")} className="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full hover:scale-105 transition-transform">
             <Crown className="w-3.5 h-3.5 text-amber-500" />
             <span className="text-[11px] font-black text-amber-600">Lvl 5</span>
             <div className="w-10 h-1.5 bg-slate-200 rounded-full overflow-hidden ml-1">
@@ -234,7 +242,7 @@ export default function Navigation() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => soundscape.playTapSound()}
+              onClick={(e) => handleNavClick(e, item.href)}
               className={`flex flex-col items-center justify-center flex-1 h-full rounded-full transition-all duration-300 touch-target relative active:scale-95 min-w-0 group ${
                 isActive ? "" : "hover:bg-slate-100/60"
               }`}

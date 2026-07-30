@@ -20,6 +20,7 @@ import { SmartRestRecoveryOverlay } from "@/components/workout/SmartRestRecovery
 import { PostWorkoutVictoryModal } from "@/components/workout/PostWorkoutVictoryModal";
 import { PerformanceReportModal } from "@/components/workout/PerformanceReportModal";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { AuthGuard } from "@/components/AuthGuard";
 import { ChevronRight, ChevronLeft, Flame, Info, CheckCircle2, Dumbbell, Calendar, Pause, Play, XCircle, Activity } from "lucide-react";
 
 export default function WorkoutHUDPage() {
@@ -58,7 +59,8 @@ export default function WorkoutHUDPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
+    <AuthGuard>
+      <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
       
       {/* Session Status & Control Bar */}
       <div className="flex items-center justify-between bg-slate-900 text-white p-3 rounded-2xl border border-slate-800 shadow-md">
@@ -351,6 +353,7 @@ export default function WorkoutHUDPage() {
       <WorkoutAddModal />
       <DayActionContextMenu />
     </div>
-  );
+  </AuthGuard>
+);
 
 }
