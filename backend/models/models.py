@@ -176,17 +176,25 @@ class WorkoutSet(Base):
     exercise_name = Column(String, nullable=False)
     set_number = Column(Integer, nullable=False)
     set_type = Column(String, default="working") # warmup, working, pr_attempt, failure, dropset, superset, giant_set, paused, negative
-    weight_kg = Column(Float, default=0.0)
-    reps = Column(Integer, default=0)
+    planned_reps = Column(Integer, default=0)
+    reps = Column(Integer, default=0) # actual reps
+    target_weight_kg = Column(Float, default=0.0)
+    weight_kg = Column(Float, default=0.0) # actual weight
+    failure_reason = Column(String, nullable=True) # e.g. "muscle_failure", "pain", "stopped_early"
     rpe = Column(Float, default=8.0) # Rate of perceived exertion 1-10
     rir = Column(Integer, default=2) # Reps in reserve
     tempo = Column(String, default="2-0-1-0")
     rest_seconds = Column(Integer, default=90)
+    actual_rest_seconds = Column(Integer, default=0)
     is_completed = Column(Boolean, default=True)
+    is_ai_modified = Column(Boolean, default=False)
+    is_manual_modified = Column(Boolean, default=False)
     is_pr = Column(Boolean, default=False)
     pain_level = Column(Integer, default=0) # 0-10
     form_rating = Column(Integer, default=5) # 1-5
     notes = Column(String, default="")
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("WorkoutSession", back_populates="sets")
@@ -263,6 +271,48 @@ class RAGVectorMemory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="rag_memories")
+
+class WorkoutConfiguration(Base):
+    __tablename__ = "workout_configurations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    auto_rest_timer = Column(Boolean, default=True)
+    default_rest_seconds = Column(Integer, default=90)
+    auto_increase_weight = Column(Boolean, default=True)
+    auto_increase_reps = Column(Boolean, default=False)
+    auto_progression = Column(Boolean, default=True)
+    training_style = Column(String, default="hypertrophy")
+    metric_units = Column(Boolean, default=True)
+    experience_mode = Column(String, default="intermediate") # beginner, intermediate, advanced
+    coach_aggressiveness = Column(String, default="moderate") # conservative, moderate, aggressive
+    workout_duration_limit_min = Column(Integer, default=60)
+    available_equipment = Column(JSON, default=list)
+    preferred_workout_days = Column(JSON, default=list)
+    recovery_sensitivity = Column(String, default="normal") # low, normal, high
+
+class WorkoutEventLog(Base):
+    __tablename__ = "workout_event_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey("workout_sessions.id"), nullable=True)
+    event_type = Column(String, nullable=False) # skipped_workout, skipped_exercise, partial_completion, workout_abandoned, etc.
+    details = Column(JSON, default=dict)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+class AIWorkoutRecommendation(Base):
+    __tablename__ = "ai_workout_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey("workout_sessions.id"), nullable=True)
+    context_type = Column(String, nullable=False) # session, pre_workout, post_workout, planning
+    message = Column(Text, nullable=False)
+    suggestion_data = Column(JSON, default=dict) # e.g. {"action": "reduce_weight", "exercise": "Bench Press", "value": -5.0}
+    is_applied = Column(Boolean, default=False)
+    is_dismissed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Habit(Base):
     __tablename__ = "habits"

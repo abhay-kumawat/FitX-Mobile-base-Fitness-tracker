@@ -282,15 +282,23 @@ class LogSetInput(BaseModel):
     exercise_name: str
     set_number: int
     set_type: str = "working" # warmup, working, pr_attempt, failure, dropset, superset, giant_set, paused, negative
-    weight_kg: float
+    planned_reps: int = 0
     reps: int
+    target_weight_kg: float = 0.0
+    weight_kg: float
+    failure_reason: Optional[str] = None
     rpe: float = 8.0
     rir: int = 2
     tempo: str = "2-0-1-0"
     rest_seconds: int = 90
+    actual_rest_seconds: int = 0
+    is_ai_modified: bool = False
+    is_manual_modified: bool = False
     pain_level: int = 0
     form_rating: int = 5
     notes: str = ""
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
 class WorkoutSetOut(BaseModel):
     id: int
@@ -298,17 +306,38 @@ class WorkoutSetOut(BaseModel):
     exercise_name: str
     set_number: int
     set_type: str
-    weight_kg: float
+    planned_reps: int
     reps: int
+    target_weight_kg: float
+    weight_kg: float
+    failure_reason: Optional[str]
     rpe: float
     rir: int
     tempo: str
     rest_seconds: int
+    actual_rest_seconds: int
     is_completed: bool
+    is_ai_modified: bool
+    is_manual_modified: bool
     is_pr: bool
     pain_level: int
     form_rating: int
     notes: str
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+class AIWorkoutRecommendationOut(BaseModel):
+    id: int
+    session_id: Optional[int]
+    context_type: str
+    message: str
+    suggestion_data: Dict[str, Any]
+    is_applied: bool
+    is_dismissed: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True

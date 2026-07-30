@@ -69,7 +69,15 @@ def log_workout_set(
     rest_seconds: int,
     pain_level: int,
     form_rating: int,
-    notes: str
+    notes: str,
+    planned_reps: int = 0,
+    target_weight_kg: float = 0.0,
+    failure_reason: Optional[str] = None,
+    actual_rest_seconds: int = 0,
+    is_ai_modified: bool = False,
+    is_manual_modified: bool = False,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None
 ) -> Dict[str, Any]:
     session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
     if not session:
@@ -113,15 +121,23 @@ def log_workout_set(
         set_type=set_type,
         weight_kg=weight_kg,
         reps=reps,
+        planned_reps=planned_reps,
+        target_weight_kg=target_weight_kg,
+        failure_reason=failure_reason,
         rpe=rpe,
         rir=rir,
         tempo=tempo,
         rest_seconds=rest_seconds,
+        actual_rest_seconds=actual_rest_seconds,
         is_completed=True,
+        is_ai_modified=is_ai_modified,
+        is_manual_modified=is_manual_modified,
         is_pr=is_pr,
         pain_level=pain_level,
         form_rating=form_rating,
-        notes=notes
+        notes=notes,
+        start_time=start_time,
+        end_time=end_time
     )
     db.add(new_set)
 

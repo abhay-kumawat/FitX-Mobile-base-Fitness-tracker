@@ -1,7 +1,9 @@
 import sqlite3
 
 def migrate():
-    conn = sqlite3.connect('fitx.db')
+    import os
+    db_path = os.path.join(os.path.dirname(__file__), '..', 'fitx.db')
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     queries = [
@@ -15,7 +17,56 @@ def migrate():
         "ALTER TABLE master_exercises ADD COLUMN future_ai_metadata JSON DEFAULT '{}';",
         "ALTER TABLE master_exercises ADD COLUMN joint_stress JSON DEFAULT '[]';",
         "ALTER TABLE workout_sessions ADD COLUMN temporal_event_id VARCHAR(36);",
-        "ALTER TABLE workout_plans ADD COLUMN master_event_id VARCHAR(36);"
+        "ALTER TABLE workout_plans ADD COLUMN master_event_id VARCHAR(36);",
+        "ALTER TABLE workout_sets ADD COLUMN planned_reps INTEGER DEFAULT 0;",
+        "ALTER TABLE workout_sets ADD COLUMN target_weight_kg FLOAT DEFAULT 0.0;",
+        "ALTER TABLE workout_sets ADD COLUMN failure_reason VARCHAR;",
+        "ALTER TABLE workout_sets ADD COLUMN actual_rest_seconds INTEGER DEFAULT 0;",
+        "ALTER TABLE workout_sets ADD COLUMN is_ai_modified BOOLEAN DEFAULT 0;",
+        "ALTER TABLE workout_sets ADD COLUMN is_manual_modified BOOLEAN DEFAULT 0;",
+        "ALTER TABLE workout_sets ADD COLUMN start_time DATETIME;",
+        "ALTER TABLE workout_sets ADD COLUMN end_time DATETIME;",
+        """CREATE TABLE IF NOT EXISTS workout_configurations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            auto_rest_timer BOOLEAN DEFAULT 1,
+            default_rest_seconds INTEGER DEFAULT 90,
+            auto_increase_weight BOOLEAN DEFAULT 1,
+            auto_increase_reps BOOLEAN DEFAULT 0,
+            auto_progression BOOLEAN DEFAULT 1,
+            training_style VARCHAR DEFAULT 'hypertrophy',
+            metric_units BOOLEAN DEFAULT 1,
+            experience_mode VARCHAR DEFAULT 'intermediate',
+            coach_aggressiveness VARCHAR DEFAULT 'moderate',
+            workout_duration_limit_min INTEGER DEFAULT 60,
+            available_equipment JSON DEFAULT '[]',
+            preferred_workout_days JSON DEFAULT '[]',
+            recovery_sensitivity VARCHAR DEFAULT 'normal',
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );""",
+        """CREATE TABLE IF NOT EXISTS workout_event_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            session_id INTEGER,
+            event_type VARCHAR NOT NULL,
+            details JSON DEFAULT '{}',
+            timestamp DATETIME,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(session_id) REFERENCES workout_sessions(id)
+        );""",
+        """CREATE TABLE IF NOT EXISTS ai_workout_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            session_id INTEGER,
+            context_type VARCHAR NOT NULL,
+            message TEXT NOT NULL,
+            suggestion_data JSON DEFAULT '{}',
+            is_applied BOOLEAN DEFAULT 0,
+            is_dismissed BOOLEAN DEFAULT 0,
+            created_at DATETIME,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(session_id) REFERENCES workout_sessions(id)
+        );"""
     ]
     
     for q in queries:

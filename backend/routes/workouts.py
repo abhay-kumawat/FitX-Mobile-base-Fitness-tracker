@@ -7,7 +7,8 @@ from backend.core.dependencies import get_current_user
 from backend.models.models import User, WorkoutSession, PersonalRecord
 from backend.schemas.schemas import (
     WorkoutSessionStartInput, WorkoutSessionOut, LogSetInput,
-    PlateCalculatorOut, WarmupProtocolOut, WarmupSetItem, MasterExerciseOut
+    PlateCalculatorOut, WarmupProtocolOut, WarmupSetItem, MasterExerciseOut,
+    AIWorkoutRecommendationOut
 )
 from backend.services.workout_execution.engine import (
     start_new_workout_session, log_workout_set, complete_workout_session
@@ -41,15 +42,23 @@ def log_set(
         exercise_name=inp.exercise_name,
         set_number=inp.set_number,
         set_type=inp.set_type,
-        weight_kg=inp.weight_kg,
+        planned_reps=inp.planned_reps,
         reps=inp.reps,
+        target_weight_kg=inp.target_weight_kg,
+        weight_kg=inp.weight_kg,
+        failure_reason=inp.failure_reason,
         rpe=inp.rpe,
         rir=inp.rir,
         tempo=inp.tempo,
         rest_seconds=inp.rest_seconds,
+        actual_rest_seconds=inp.actual_rest_seconds,
+        is_ai_modified=inp.is_ai_modified,
+        is_manual_modified=inp.is_manual_modified,
         pain_level=inp.pain_level,
         form_rating=inp.form_rating,
-        notes=inp.notes
+        notes=inp.notes,
+        start_time=inp.start_time,
+        end_time=inp.end_time
     )
     return {
         "status": "success",
@@ -187,3 +196,18 @@ def search_exercises(
         q = q.filter(MasterExercise.difficulty == difficulty)
         
     return q.limit(50).all()
+
+@router.get("/intelligence/recommendations", response_model=List[AIWorkoutRecommendationOut])
+def get_ai_recommendations(
+    session_id: Optional[int] = None,
+    context_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import AIWorkoutRecommendation
+    q = db.query(AIWorkoutRecommendation).filter(AIWorkoutRecommendation.user_id == current_user.id)
+    if session_id:
+        q = q.filter(AIWorkoutRecommendation.session_id == session_id)
+    if context_type:
+        q = q.filter(AIWorkoutRecommendation.context_type == context_type)
+    return q.order_by(AIWorkoutRecommendation.created_at.desc()).limit(10).all()
