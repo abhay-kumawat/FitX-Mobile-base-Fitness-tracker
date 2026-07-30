@@ -275,7 +275,7 @@ export default function WebsiteLandingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4 w-full">
           {/* Free Tier */}
           <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4 min-w-0">
             <div>
