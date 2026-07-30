@@ -221,58 +221,6 @@ export default function WebsiteLandingPage() {
         </div>
       </section>
 
-      {/* Google Authenticator Banner Card */}
-      <section className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                Google Authenticator & Single Sign-On
-                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase">
-                  2FA Protected
-                </span>
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">
-                Protect your biometric telemetry & fitness data with Google 2-Factor Authentication.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start space-x-3">
-            <KeyRound className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-xs font-black text-slate-900">Google OAuth 2.0 Integration</h4>
-              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                1-Click Sign In and Sign Up with your Google Account.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start space-x-3">
-            <Lock className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-xs font-black text-slate-900">Google Authenticator TOTP</h4>
-              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                6-digit timed verification code updated every 30 seconds.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleOpenAuth}
-          className="w-full py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-black text-xs flex items-center justify-center space-x-2 transition-all active:scale-98"
-        >
-          <KeyRound className="w-4 h-4" />
-          <span>Launch Google Authenticator Sign Up Modal</span>
-        </button>
-      </section>
-
       {/* 8 Microservices Grid */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-1">
