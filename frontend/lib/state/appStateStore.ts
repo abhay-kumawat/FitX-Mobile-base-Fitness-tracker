@@ -100,6 +100,7 @@ export interface MobileUXState {
   viewMode: "390px_frame" | "fluid";
   themeMode: "dark_obsidian" | "pastel_zen";
   widgetLayout: string[];
+  mealPlanReview: { isOpen: boolean; recommendations: any[] };
 }
 
 export interface AppStateSnapshot {
@@ -219,7 +220,8 @@ const INITIAL_STATE: AppState = {
     activeView: "dashboard",
     viewMode: "390px_frame",
     themeMode: "dark_obsidian",
-    widgetLayout: ["hero", "readiness", "streak", "stats"]
+    widgetLayout: ["hero", "readiness", "streak", "stats"],
+    mealPlanReview: { isOpen: false, recommendations: [] }
   },
   historySnapshots: [],
   historyIndex: -1
@@ -444,6 +446,29 @@ export function dispatchAIAction(type: string, payload: any): AppState {
           updated = { ...parsed };
         } catch (e) {}
       }
+      break;
+    }
+
+    // 7. Modals
+    case "OPEN_MEAL_PLAN_REVIEW": {
+      updated.ux = {
+        ...updated.ux,
+        mealPlanReview: {
+          isOpen: true,
+          recommendations: payload.recommendations || []
+        }
+      };
+      break;
+    }
+
+    case "CLOSE_MEAL_PLAN_REVIEW": {
+      updated.ux = {
+        ...updated.ux,
+        mealPlanReview: {
+          ...updated.ux.mealPlanReview,
+          isOpen: false
+        }
+      };
       break;
     }
 

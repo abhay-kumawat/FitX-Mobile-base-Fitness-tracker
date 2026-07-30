@@ -125,3 +125,56 @@ class MetricExplanation(Base):
     confidence_pct = Column(Float, default=100.0)
     
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class MuscleAnalytics(Base):
+    """
+    Core model for real-time development scores, training frequency, weekly/monthly volume.
+    """
+    __tablename__ = "muscle_analytics"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    muscle_group = Column(String(64), nullable=False, index=True) # e.g. "Chest", "Quads"
+    
+    development_score = Column(Float, default=0.0) # 0-100
+    weekly_volume_kg = Column(Float, default=0.0)
+    monthly_volume_kg = Column(Float, default=0.0)
+    training_frequency_7d = Column(Integer, default=0)
+    effective_sets_7d = Column(Integer, default=0)
+    average_intensity_rpe = Column(Float, default=0.0)
+    estimated_recovery_pct = Column(Float, default=100.0)
+    
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class GrowthHistory(Base):
+    """
+    Historical tracking of muscle growth metrics.
+    """
+    __tablename__ = "growth_history"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    muscle_group = Column(String(64), nullable=False, index=True)
+    date_recorded = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    
+    development_score = Column(Float, nullable=False)
+    trend_pct = Column(Float, default=0.0) # e.g. +2.5
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AIMuscleReports(Base):
+    """
+    AI recommendations and injury risk assessments per muscle.
+    """
+    __tablename__ = "ai_muscle_reports"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    muscle_group = Column(String(64), nullable=False, index=True)
+    
+    ai_recommendation = Column(Text, nullable=False)
+    injury_risk_score = Column(Float, default=0.0) # 0-100
+    confidence = Column(Float, default=100.0)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+

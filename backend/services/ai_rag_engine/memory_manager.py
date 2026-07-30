@@ -70,20 +70,37 @@ def retrieve_rag_context(db: Session, user_id: int, query: str, top_k: int = 4) 
     return context_list
 
 def generate_rag_response(db: Session, user_id: int, query: str) -> Dict[str, Any]:
+    from backend.core.config import settings
+    import json
+    import google.generativeai as genai
+
     context = retrieve_rag_context(db, user_id, query)
+    context_str = json.dumps(context)
     
-    query_lower = query.lower()
-    if "weak" in query_lower or "fatigue" in query_lower:
-        answer = "Based on your recent workout history and recovery trends, lower body volume was high 48h ago while sleep averaged <6.5 hours. Your CNS requires 24h active recovery before another heavy squat session."
-    elif "bench" in query_lower or "chest" in query_lower:
-        answer = "Your historical PR for Barbell Bench Press is recorded. To avoid your documented shoulder tightness, we recommend replacing flat bench with 30° Incline Dumbbell Press (Neutral Grip)."
-    elif "hotel" in query_lower or "travel" in query_lower or "no equipment" in query_lower:
-        answer = "Generated a 20-min Hotel Room Streak Saver Routine: 3x15 High-Density DB Push-Ups, 3x12 Chair Dips, and 3x45s Planks with zero equipment required."
+    reply_text = ""
+    if settings.GEMINI_API_KEY:
+        try:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel(settings.GEMINI_MODEL)
+            prompt = f"You are an AI personal trainer querying a fitness RAG memory database. User query: '{query}'. Context retrieved: {context_str}. Answer the query using ONLY the retrieved context. Be concise and authoritative."
+            response = model.generate_content(prompt)
+            reply_text = response.text
+        except Exception as e:
+            reply_text = f"[Offline Mode] RAG system unavailable. (Error: {str(e)})"
     else:
-        answer = f"Analyzed your personal training history and goals. For '{query}', your optimal strategy is to maintain a 4-day PPL split with progressive overload (+2.5kg per microcycle) and 90s rest between sets."
+        # Fallback Heuristic
+        query_lower = query.lower()
+        if "weak" in query_lower or "fatigue" in query_lower:
+            reply_text = "Based on your recent workout history and recovery trends, lower body volume was high 48h ago while sleep averaged <6.5 hours. Your CNS requires 24h active recovery before another heavy squat session."
+        elif "bench" in query_lower or "chest" in query_lower:
+            reply_text = "Your historical PR for Barbell Bench Press is recorded. To avoid your documented shoulder tightness, we recommend replacing flat bench with 30° Incline Dumbbell Press (Neutral Grip)."
+        elif "hotel" in query_lower or "travel" in query_lower or "no equipment" in query_lower:
+            reply_text = "Generated a 20-min Hotel Room Streak Saver Routine: 3x15 High-Density DB Push-Ups, 3x12 Chair Dips, and 3x45s Planks with zero equipment required."
+        else:
+            reply_text = f"Analyzed your personal training history and goals. For '{query}', your optimal strategy is to maintain a 4-day PPL split with progressive overload (+2.5kg per microcycle) and 90s rest between sets."
 
     return {
-        "answer": answer,
+        "answer": reply_text,
         "retrieved_context": context,
         "confidence": 0.96,
         "suggested_actions": [

@@ -15,8 +15,9 @@ import { WarmupPyramidModal } from "@/components/workout/WarmupPyramidModal";
 import { PlateLoadingVisualizerModal } from "@/components/workout/PlateLoadingVisualizerModal";
 import { SmartRestRecoveryOverlay } from "@/components/workout/SmartRestRecoveryOverlay";
 import { PostWorkoutVictoryModal } from "@/components/workout/PostWorkoutVictoryModal";
+import { PerformanceReportModal } from "@/components/workout/PerformanceReportModal";
 import { soundscape } from "@/lib/soundscapeEngine";
-import { ChevronRight, ChevronLeft, Flame, Info, CheckCircle2, Dumbbell, Calendar, LayoutDashboard } from "lucide-react";
+import { ChevronRight, ChevronLeft, Flame, Info, CheckCircle2, Dumbbell, Calendar, Pause, Play, XCircle, Activity } from "lucide-react";
 
 export default function WorkoutHUDPage() {
   const workoutStore = useWorkoutStore();
@@ -27,6 +28,7 @@ export default function WorkoutHUDPage() {
 
   useEffect(() => {
     setMounted(true);
+    workoutStore.syncActiveSession();
   }, []);
 
   if (!mounted) {
@@ -38,51 +40,97 @@ export default function WorkoutHUDPage() {
   }
 
   const currentExerciseIndex = workoutStore?.currentExerciseIndex || 0;
-  const exercisesList = workoutStore?.exercises && workoutStore.exercises.length > 0 ? workoutStore.exercises : [
-    {
-      id: "ex1",
-      name: "Barbell Incline Bench Press",
-      muscleTag: "Upper Chest",
-      formGuard: "Form Guard Active",
-      tips: ["Retract shoulders", "Control descent"],
-      targetSets: 4,
-      sets: [
-        { setNumber: 1, weightKg: 60, reps: 10, completed: true, type: "warmup" as const },
-        { setNumber: 2, weightKg: 80, reps: 8, completed: false, type: "work" as const },
-      ],
-    }
-  ];
-
+  const exercisesList = workoutStore?.exercises && workoutStore.exercises.length > 0 ? workoutStore.exercises : [];
   const currentExercise = exercisesList[currentExerciseIndex] || exercisesList[0];
 
-  const handleFinish = () => {
+  const handleOpenFinishReport = () => {
+    soundscape.playTapSound();
+    workoutStore.toggleReportModal(true);
+  };
+
+  const handleFinalSubmit = async (reportData: any) => {
     soundscape.playVictoryFanfare();
-    if (workoutStore?.finishWorkout) workoutStore.finishWorkout();
+    await workoutStore.finishWorkout(reportData);
   };
 
   return (
     <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
       
+      {/* Session Status & Control Bar */}
+      <div className="flex items-center justify-between bg-slate-900 text-white p-3 rounded-2xl border border-slate-800 shadow-md">
+        <div className="flex items-center gap-2">
+          <span className={`w-3 h-3 rounded-full ${workoutStore.isWorkoutActive ? "bg-emerald-400 animate-ping" : workoutStore.workoutStatus === "paused" ? "bg-amber-400" : "bg-slate-500"}`} />
+          <div className="flex flex-col">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-200">
+              {workoutStore.workoutName}
+            </span>
+            <span className="text-[10px] font-bold text-emerald-400 capitalize">
+              Status: {workoutStore.workoutStatus}
+            </span>
+          </div>
+        </div>
+
+        {/* Workout Control Actions */}
+        <div className="flex items-center gap-1.5">
+          {workoutStore.isWorkoutActive ? (
+            <button
+              onClick={() => { soundscape.playTapSound(); workoutStore.pauseWorkout(); }}
+              className="px-2.5 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-amber-500/30"
+            >
+              <Pause className="w-3.5 h-3.5" /> Pause
+            </button>
+          ) : workoutStore.workoutStatus === "paused" ? (
+            <button
+              onClick={() => { soundscape.playTapSound(); workoutStore.resumeWorkout(); }}
+              className="px-2.5 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-emerald-500/30"
+            >
+              <Play className="w-3.5 h-3.5" /> Resume
+            </button>
+          ) : (
+            <button
+              onClick={() => { soundscape.playTapSound(); workoutStore.startWorkout(); }}
+              className="px-2.5 py-1.5 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm"
+            >
+              <Play className="w-3.5 h-3.5" /> Start
+            </button>
+          )}
+
+          {(workoutStore.isWorkoutActive || workoutStore.workoutStatus === "paused") && (
+            <button
+              onClick={() => {
+                if (confirm("Are you sure you want to cancel this workout session?")) {
+                  workoutStore.cancelWorkout("User cancelled");
+                }
+              }}
+              className="p-1.5 bg-slate-800 text-rose-400 hover:bg-rose-500/20 rounded-xl border border-slate-700"
+              title="Cancel Session"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Dashboard Tabs */}
       <div className="flex bg-slate-100 p-1 rounded-xl">
         <button
           onClick={() => { soundscape.playTapSound(); setActiveTab("active"); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${activeTab === "active" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
-          <Dumbbell className="w-4 h-4" /> Today's Workout
+          <Dumbbell className="w-4 h-4" /> Active HUD
         </button>
         <button
           onClick={() => { soundscape.playTapSound(); setActiveTab("planner"); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${activeTab === "planner" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
-          <Calendar className="w-4 h-4" /> Planner
+          <Calendar className="w-4 h-4" /> Planner & Builder
         </button>
       </div>
 
       {activeTab === "planner" && (
         <div className="flex flex-col gap-6">
-          <WorkoutPlanner onAddExercise={() => setIsPickerOpen(true)} />
-          <EditableWorkoutBuilder />
+          <WorkoutPlanner onAddExercise={() => { setActiveTab("active"); }} />
+          <EditableWorkoutBuilder onAddExercise={() => setIsPickerOpen(true)} />
         </div>
       )}
 
@@ -93,12 +141,12 @@ export default function WorkoutHUDPage() {
             <div className="flex items-center gap-3">
               <MascotVector mood="pumped" size={54} />
               <div className="flex flex-col">
-                <span className="text-xs font-black text-emerald-600">AI Form Guard</span>
-                <span className="text-[11px] font-bold text-slate-700">"Drive with your elbows and feel the stretch!"</span>
+                <span className="text-xs font-black text-emerald-600">AI Live Form Guard</span>
+                <span className="text-[11px] font-bold text-slate-700">"Drive through your heels and control the eccentrics!"</span>
               </div>
             </div>
             <PillBadge variant="gold" icon={<Flame className="w-3 h-3 text-amber-500 fill-amber-500" />}>
-              Set {currentExerciseIndex + 1}/{exercisesList.length}
+              Movement {currentExerciseIndex + 1}/{exercisesList.length}
             </PillBadge>
           </div>
 
@@ -143,7 +191,7 @@ export default function WorkoutHUDPage() {
                     setIndex={idx}
                     set={set}
                     onLogSet={(data) => {
-                      console.log("Logged Set:", data);
+                      workoutStore.toggleSetComplete(currentExercise.id, idx, data);
                     }}
                   />
                 ))}
@@ -164,7 +212,7 @@ export default function WorkoutHUDPage() {
                 className="flex items-center justify-between text-xs font-black text-slate-800 w-full"
               >
                 <span className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-emerald-600" /> Form Tips & Safety
+                  <Info className="w-4 h-4 text-emerald-600" /> Form Tips & Safety Cues
                 </span>
                 <span className="text-emerald-600">{showTips ? "Hide" : "Show"}</span>
               </button>
@@ -183,8 +231,8 @@ export default function WorkoutHUDPage() {
           )}
 
           {/* Finish Workout CTA */}
-          <Button3D variant="gold" fullWidth onClick={handleFinish} className="py-4">
-            <CheckCircle2 className="w-5 h-5" /> Finish Workout & Claim XP
+          <Button3D variant="gold" fullWidth onClick={handleOpenFinishReport} className="py-4">
+            <CheckCircle2 className="w-5 h-5" /> Finish Workout & Submit Report
           </Button3D>
         </div>
       )}
@@ -197,7 +245,7 @@ export default function WorkoutHUDPage() {
         isOpen={isPickerOpen} 
         onClose={() => setIsPickerOpen(false)}
         onSelect={(ex) => {
-          console.log("Selected:", ex);
+          workoutStore.addExercise(ex);
           setIsPickerOpen(false);
         }}
       />
@@ -205,6 +253,13 @@ export default function WorkoutHUDPage() {
       <PlateLoadingVisualizerModal />
       <SmartRestRecoveryOverlay />
       <PostWorkoutVictoryModal />
+      
+      {/* Performance Report Drawer Modal */}
+      <PerformanceReportModal
+        isOpen={workoutStore.showReportModal}
+        onClose={() => workoutStore.toggleReportModal(false)}
+        onSubmitReport={handleFinalSubmit}
+      />
     </div>
   );
 }

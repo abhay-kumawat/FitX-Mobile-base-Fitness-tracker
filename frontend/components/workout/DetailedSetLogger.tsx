@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Check, X, Info } from "lucide-react";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 interface DetailedSetLoggerProps {
   exerciseId: string;
@@ -90,16 +91,31 @@ export function DetailedSetLogger({ exerciseId, setIndex, set, onLogSet }: Detai
           </div>
         </div>
 
-        <button
-          onClick={handleComplete}
-          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-            isCompleted 
-              ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-md" 
-              : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-          }`}
-        >
-          <Check className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              soundscape.playTapSound();
+              const reason = prompt("Reason for skipping set? (e.g. Too heavy, Joint Pain, Time limit)", "Too heavy");
+              if (reason) {
+                useWorkoutStore.getState().skipSet(exerciseId, setIndex, reason);
+              }
+            }}
+            className="px-2 py-1 bg-slate-100 text-rose-500 rounded-lg text-[10px] font-bold hover:bg-rose-50 border border-slate-200"
+            title="Skip Set"
+          >
+            Skip Set
+          </button>
+          <button
+            onClick={handleComplete}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+              isCompleted 
+                ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-md" 
+                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+            }`}
+          >
+            <Check className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {showFailureReasons && !isCompleted && (

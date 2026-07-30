@@ -5,9 +5,11 @@ import { TreePine, LineChart, Bot } from "lucide-react";
 import { GrowthTreeTab } from "@/components/growth/GrowthTreeTab";
 import { GrowthLabTab } from "@/components/growth/GrowthLabTab";
 import { AICoachIntelligenceTab } from "@/components/growth/AICoachIntelligenceTab";
+import { BodyAnalysisTab } from "@/components/growth/BodyAnalysisTab";
+import { Activity } from "lucide-react";
 
 export default function SkillTreePage() {
-  const [activeTab, setActiveTab] = useState<"tree" | "lab" | "coach">("tree");
+  const [activeTab, setActiveTab] = useState<"tree" | "lab" | "coach" | "body">("tree");
 
   return (
     <div className="flex flex-col gap-5 pb-28">
@@ -49,6 +51,16 @@ export default function SkillTreePage() {
         >
           <Bot className="w-3.5 h-3.5" /> Coach
         </button>
+        <button
+          onClick={() => setActiveTab("body")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full text-[11px] font-bold transition-all ${
+            activeTab === "body"
+              ? "bg-white text-rose-700 shadow-sm border border-slate-200"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" /> Body
+        </button>
       </div>
 
       {/* Tab Content Area */}
@@ -56,6 +68,7 @@ export default function SkillTreePage() {
         {activeTab === "tree" && <GrowthTreeTab />}
         {activeTab === "lab" && <GrowthLabTab />}
         {activeTab === "coach" && <AICoachIntelligenceTab />}
+        {activeTab === "body" && <BodyAnalysisTab />}
       </div>
     </div>
   );

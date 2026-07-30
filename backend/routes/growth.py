@@ -4,6 +4,7 @@ from typing import Optional
 
 from backend.core.database import get_db
 from backend.services.analytics.growth_service import GrowthService
+from backend.services.analytics.muscle_growth_engine import calculate_muscle_metrics, get_ai_muscle_recommendation
 from backend.schemas.growth import (
     GrowthTreeResponse, AnalyticsDashboardResponse, TimelineResponse,
     BodyMeasurementCreate, BodyMeasurementResponse,
@@ -24,6 +25,14 @@ def get_growth_tree(user_id: int, db: Session = Depends(get_db)):
 def get_analytics_dashboard(user_id: int, db: Session = Depends(get_db)):
     service = GrowthService(db)
     return service.get_analytics_dashboard(user_id)
+
+@router.get("/muscle-analytics")
+def get_muscle_analytics(user_id: int = 1, db: Session = Depends(get_db)):
+    metrics = calculate_muscle_metrics(db, user_id)
+    # Add AI recommendations
+    for m, data in metrics.items():
+        data["ai_recommendation"] = get_ai_muscle_recommendation(m, data)
+    return metrics
 
 @router.get("/timeline", response_model=TimelineResponse)
 def get_timeline(user_id: int, date: Optional[str] = Query(None, description="YYYY-MM-DD filter"), db: Session = Depends(get_db)):

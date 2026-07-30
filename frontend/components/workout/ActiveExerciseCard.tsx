@@ -15,8 +15,10 @@ import {
   Volume2,
   Flame,
   Repeat,
-  ChevronDown
+  ChevronDown,
+  SkipForward
 } from "lucide-react";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 import { ExerciseState, SetLog } from "@/lib/workout/storage";
 import { FormChecklistDrawer } from "./FormChecklistDrawer";
 import { soundscapeEngine, speakCoachCue } from "@/lib/workout/soundscapeEngine";
@@ -171,6 +173,19 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
             title="Warm-up Pyramid"
           >
             <Flame className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              const reason = prompt("Reason for skipping exercise? (e.g. Pain, Equipment unavailable, No time, Fatigue)", "Equipment unavailable");
+              if (reason) {
+                useWorkoutStore.getState().skipExercise(exercise.id, reason);
+              }
+            }}
+            className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 hover:bg-rose-500/20 transition-all touch-target flex items-center gap-1 text-xs font-bold"
+            title="Skip Exercise"
+          >
+            <SkipForward className="w-4 h-4" /> Skip
           </button>
 
           <button

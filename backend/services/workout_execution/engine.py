@@ -206,3 +206,110 @@ def complete_workout_session(db: Session, user_id: int, session_id: int, notes: 
     db.commit()
     db.refresh(session)
     return session
+
+def pause_workout_session(db: Session, user_id: int, session_id: int) -> WorkoutSession:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+    session.status = "paused"
+    db.commit()
+    db.refresh(session)
+    return session
+
+def resume_workout_session(db: Session, user_id: int, session_id: int) -> WorkoutSession:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+    session.status = "in_progress"
+    db.commit()
+    db.refresh(session)
+    return session
+
+def cancel_workout_session(db: Session, user_id: int, session_id: int, reason: str = "User cancelled") -> WorkoutSession:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+    session.status = "cancelled"
+    session.end_time = datetime.utcnow()
+    session.notes = f"Cancelled: {reason}"
+    if session.temporal_event_id:
+        te = db.query(TemporalEvent).filter(TemporalEvent.id == session.temporal_event_id).first()
+        if te:
+            te.status = "CANCELLED"
+    db.commit()
+    db.refresh(session)
+    return session
+
+def skip_workout_set(db: Session, user_id: int, session_id: int, exercise_name: str, set_number: int, reason: str) -> WorkoutSet:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+
+    skipped_set = WorkoutSet(
+        session_id=session_id,
+        exercise_name=exercise_name,
+        set_number=set_number,
+        set_type="work",
+        weight_kg=0.0,
+        reps=0,
+        failure_reason=f"Skipped Set: {reason}",
+        is_completed=False,
+        notes=f"Skipped due to: {reason}"
+    )
+    db.add(skipped_set)
+    session.ai_guidance_logs.append({
+        "timestamp": datetime.utcnow().isoformat(),
+        "exercise": exercise_name,
+        "set_number": set_number,
+        "action": "skipped_set",
+        "reason": reason
+    })
+    db.commit()
+    db.refresh(skipped_set)
+    return skipped_set
+
+def skip_workout_exercise(db: Session, user_id: int, session_id: int, exercise_name: str, reason: str) -> Dict[str, Any]:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+
+    session.ai_guidance_logs.append({
+        "timestamp": datetime.utcnow().isoformat(),
+        "exercise": exercise_name,
+        "action": "skipped_exercise",
+        "reason": reason
+    })
+    db.commit()
+    return {"status": "skipped", "exercise_name": exercise_name, "reason": reason}
+
+def log_performance_report(
+    db: Session,
+    user_id: int,
+    session_id: int,
+    pain_level: int = 0,
+    energy_level: int = 5,
+    form_confidence: int = 5,
+    difficulty_level: int = 5,
+    motivation_level: int = 5,
+    notes: str = ""
+) -> Dict[str, Any]:
+    session = db.query(WorkoutSession).filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id).first()
+    if not session:
+        raise ValueError("Workout session not found.")
+
+    from backend.models.models import PsychologicalLog
+    psy_log = PsychologicalLog(
+        user_id=user_id,
+        date=datetime.utcnow().strftime("%Y-%m-%d"),
+        stress=float(10 - motivation_level),
+        energy=float(energy_level),
+        motivation=float(motivation_level),
+        confidence=float(form_confidence),
+        exercise_difficulty=float(difficulty_level),
+        notes=f"Workout #{session_id} Report - Form Confidence: {form_confidence}/5, Difficulty: {difficulty_level}/5, Pain: {pain_level}/10. {notes}"
+    )
+    db.add(psy_log)
+    session.notes = f"{session.notes or ''} [Report: Pain={pain_level}, Energy={energy_level}, Form={form_confidence}, Diff={difficulty_level}] {notes}".strip()
+    db.commit()
+    return {"status": "success", "session_id": session_id}
+

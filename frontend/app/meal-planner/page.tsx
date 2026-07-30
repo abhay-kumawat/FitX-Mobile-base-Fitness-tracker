@@ -25,7 +25,9 @@ import { MealComboBuilderModal } from "@/components/nutrition/MealComboBuilderMo
 import { PlanActionBottomSheet } from "@/components/nutrition/PlanActionBottomSheet";
 import { MealEventModal } from "@/components/nutrition/MealEventModal";
 import { AIMealPlanModal } from "@/components/nutrition/AIMealPlanModal";
+import { NutritionAIReviewModal } from "@/components/nutrition/NutritionAIReviewModal";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { useAppState, dispatchAIAction } from "@/lib/state/appStateStore";
 
 export default function MealPlannerPage() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -37,6 +39,9 @@ export default function MealPlannerPage() {
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MealCategory>("Breakfast");
+
+  const appState = useAppState();
+  const mealPlanReview = appState.ux.mealPlanReview;
 
   const { notifications, toggleNotification, fetchDashboardForDate, copyPlanToDate, copyRangePlans } = useDietStore();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -283,6 +288,20 @@ export default function MealPlannerPage() {
         isOpen={comboModalOpen}
         onClose={() => setComboModalOpen(false)}
         dateStr={selectedDateStr}
+      />
+
+      {/* AI Meal Plan Review Modal */}
+      <NutritionAIReviewModal
+        isOpen={mealPlanReview.isOpen}
+        onClose={() => dispatchAIAction("CLOSE_MEAL_PLAN_REVIEW", {})}
+        recommendations={mealPlanReview.recommendations}
+        onApprove={(rec) => {
+          // Handle approval logic (e.g., dispatch actions to useDietStore)
+          console.log("Approved recommendation:", rec);
+        }}
+        onRegenerate={() => {
+          console.log("Regenerating recommendations...");
+        }}
       />
     </div>
   );

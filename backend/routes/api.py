@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 
 from backend.core.database import get_db
+from backend.models.models import User
 from backend.schemas.schemas import (
     UserCreate, UserLogin, Token, UserOut, ProfileSchema,
     SignalInput, RecoveryInput, RecoveryResult, OverloadInput, OverloadRecommendation,
@@ -39,8 +40,10 @@ from backend.services.muscle_readiness.adaptive_calculator import calculate_musc
 from backend.services.ai_rag_engine.memory_manager import generate_rag_response, store_rag_memory
 from backend.models.models import (
     OnboardingProfile, MasterExercise, WorkoutSession, PersonalRecord, WorkoutPlan,
-    UserTelemetry, UserMealLog, UserGamification, SocialFeedItem, WearableDeviceSync
+    UserTelemetry, UserMealLog, UserGamification, SocialFeedItem, WearableDeviceSync,
+    User
 )
+from backend.core.dependencies import get_current_user
 
 # Dynamic imports for numbered service folders
 s01_gen = importlib.import_module("backend.services.01_adaptive_planning_engine.generator").generate_adaptive_workout_plan
@@ -202,10 +205,19 @@ def generate_plan(signals: SignalInput):
 
 # --- Service 02: Workout Version Control ---
 @router.post("/version-control/compare")
-def compare_versions(v1: int = 1, v2: int = 2):
-    dummy_v1 = {"version": v1, "exercises": [{"name": "Barbell Squat", "sets": 3, "reps": 10}]}
-    dummy_v2 = {"version": v2, "exercises": [{"name": "Goblet Squat", "sets": 3, "reps": 12}]}
-    return s02_cmp(dummy_v1, dummy_v2)
+def compare_versions(
+    v1_id: int, 
+    v2_id: int, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import WorkoutPlan
+    plan1 = db.query(WorkoutPlan).filter(WorkoutPlan.id == v1_id, WorkoutPlan.user_id == current_user.id).first()
+    plan2 = db.query(WorkoutPlan).filter(WorkoutPlan.id == v2_id, WorkoutPlan.user_id == current_user.id).first()
+    if not plan1 or not plan2:
+        raise HTTPException(status_code=404, detail="One or both plans not found")
+    
+    return s02_cmp(plan1.workout_data, plan2.workout_data)
 
 # --- Service 03: AI Decision Explanation ---
 @router.get("/decision-explain")
@@ -229,9 +241,10 @@ def add_memory(mem: MemoryCreate):
 
 # --- Service 06: Smart Habit Engine ---
 @router.get("/habits/detect")
-def detect_habits():
-    dummy_logs = [{"completed": True}, {"completed": True}, {"completed": False}, {"completed": True}]
-    return s06_det(dummy_logs)
+def detect_habits(user_id: int = 1, db: Session = Depends(get_db)):
+    sessions = db.query(WorkoutSession).filter(WorkoutSession.user_id == user_id).order_by(WorkoutSession.start_time.desc()).limit(30).all()
+    logs = [{"completed": s.status == "completed"} for s in sessions]
+    return s06_det(logs)
 
 # --- Service 07: AI Recovery Score ---
 @router.post("/recovery/score", response_model=RecoveryResult)
@@ -249,10 +262,36 @@ def get_recovery_score(rec: RecoveryInput):
 
 # --- Service 08: Conflict Detection ---
 @router.get("/conflict-detect")
-def check_conflicts():
-    dummy_ex = [{"name": "Overhead Press", "target_muscle": "shoulders"}]
-    fatigue = {"shoulders": 85.0}
-    return s08_mus(dummy_ex, fatigue)
+def check_conflicts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import MuscleReadiness
+    
+    last_session = db.query(WorkoutSession).filter(
+        WorkoutSession.user_id == current_user.id, 
+        WorkoutSession.status == "completed"
+    ).order_by(WorkoutSession.start_time.desc()).first()
+    
+    if not last_session:
+        return {"status": "clear", "conflicts": []}
+    
+    # Extract unique exercises from last session
+    ex_list = []
+    for s in last_session.sets:
+        if s.exercise_name not in [e["name"] for e in ex_list]:
+            # Get primary muscle (simplified)
+            m_ex = db.query(MasterExercise).filter(MasterExercise.name == s.exercise_name).first()
+            if m_ex:
+                ex_list.append({"name": s.exercise_name, "target_muscle": m_ex.primary_muscle})
+
+    # Get readiness / fatigue for those muscles
+    fatigue = {}
+    readiness = db.query(MuscleReadiness).filter(MuscleReadiness.user_id == current_user.id).all()
+    for r in readiness:
+        fatigue[r.muscle_name] = max(0.0, 100.0 - r.readiness_pct)
+        
+    return s08_mus(ex_list, fatigue)
 
 # --- Service 09: AI Exercise Graph ---
 @router.get("/exercise-graph")
@@ -261,12 +300,27 @@ def get_graph():
 
 # --- Service 10: Progressive Overload Engine ---
 @router.post("/progressive-overload/calculate", response_model=OverloadRecommendation)
-def calculate_overload(input_data: OverloadInput):
+def calculate_overload(
+    input_data: OverloadInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import Profile, RecoveryScore
+    
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    goal = profile.fitness_goal if profile else "hypertrophy"
+    
+    rec = db.query(RecoveryScore).filter(RecoveryScore.user_id == current_user.id).order_by(RecoveryScore.id.desc()).first()
+    score = rec.total_recovery_score if rec else 80.0
+    
     next_reps = s10_rep(input_data.current_reps, input_data.rpe)
     next_weight = s10_wgt(input_data.current_weight, input_data.rpe)
     rest = s10_rst(True, input_data.rpe, input_data.fatigue_level)
-    tempo = s10_tmp("hypertrophy", True)
-    deload = s10_dlg(2, 75.0)
+    tempo = s10_tmp(goal, True)
+    
+    # Check consecutive high intensity weeks (simulated 2 for now, or query past sessions)
+    consecutive_weeks = 2 
+    deload = s10_dlg(consecutive_weeks, score)
 
     return OverloadRecommendation(
         exercise_name=input_data.exercise_name,
@@ -276,39 +330,96 @@ def calculate_overload(input_data: OverloadInput):
         recommended_rest_sec=rest,
         tempo=tempo,
         is_deload_week=deload["trigger_deload"],
-        explanation=f"RPE {input_data.rpe} indicates optimal target progression."
+        explanation=f"RPE {input_data.rpe} indicates optimal target progression. {deload['recommendation'] if deload['trigger_deload'] else ''}"
     )
 
 # --- Service 11: Fatigue Prediction ---
 @router.get("/fatigue/predict", response_model=FatigueData)
-def predict_fatigue(recovery_score: float = 75.0):
-    dist = s11_mdl([], recovery_score)
+def predict_fatigue(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import RecoveryScore, WorkoutSession
+    rec = db.query(RecoveryScore).filter(RecoveryScore.user_id == current_user.id).order_by(RecoveryScore.id.desc()).first()
+    score = rec.total_recovery_score if rec else 75.0
+    
+    # Get last 7 days of sessions to build historical_data
+    from datetime import datetime, timedelta
+    recent = datetime.utcnow() - timedelta(days=7)
+    sessions = db.query(WorkoutSession).filter(WorkoutSession.user_id == current_user.id, WorkoutSession.start_time >= recent).all()
+    
+    hist_data = []
+    for s in sessions:
+        for st in s.sets:
+            hist_data.append({
+                "exercise_name": st.exercise_name,
+                "reps": st.reps,
+                "weight_kg": st.weight_kg,
+                "rpe": st.rpe
+            })
+            
+    dist = s11_mdl(hist_data, score)
     return FatigueData(**dist)
 
 # --- Service 12: Workout Simulator ---
 @router.get("/simulator/run")
-def run_simulator(duration_min: int = 30, location: str = "hotel_room"):
-    base_ex = [
-        {"name": "Barbell Bench Press", "sets": 3, "equipment_required": "barbell"},
-        {"name": "Overhead Press", "sets": 3, "equipment_required": "barbell"},
-        {"name": "Cable Curls", "sets": 3, "equipment_required": "cables"}
-    ]
+def run_simulator(
+    duration_min: int = 30, 
+    location: str = "hotel_room", 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import WorkoutPlan, Profile
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    
+    # Try to find an active plan to base the simulation on
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.user_id == current_user.id, WorkoutPlan.status == "active").first()
+    
+    base_ex = []
+    if plan and "exercises" in plan.workout_data:
+        base_ex = plan.workout_data["exercises"]
+    else:
+        # Default smart base if no plan exists
+        base_ex = [
+            {"name": "Barbell Squat", "sets": 3, "equipment_required": "barbell"},
+            {"name": "Bench Press", "sets": 3, "equipment_required": "barbell"}
+        ]
+        
     return s12_reg(base_ex, duration_min, location)
 
 # --- Service 13: Scenario Planner ---
 @router.post("/scenario-planner/generate")
-def scenario_planner(req: ScenarioRequest):
+def scenario_planner(
+    req: ScenarioRequest,
+    current_user: User = Depends(get_current_user)
+):
     return s13_htl(req.scenario_type, req.available_time_min)
 
 # --- Service 14: Meal Planner Budget ---
 @router.post("/meal-planner/generate")
-def plan_meals(req: MealPlanRequest):
-    return s14_gen(req.daily_budget, req.region, req.dietary_preference, req.cooking_skill, req.target_calories)
+def plan_meals(
+    req: MealPlanRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import Profile
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    
+    budget = req.daily_budget or (profile.daily_meal_budget if profile else 20.0)
+    region = req.region or (profile.region if profile else "Global")
+    diet = req.dietary_preference or (profile.dietary_preference if profile else "anything")
+    
+    return s14_gen(budget, region, diet, req.cooking_skill, req.target_calories)
 
 # --- Service 15: AI Grocery Generator ---
 @router.get("/grocery/generate")
-def generate_grocery():
-    daily_plans = [{"meals": [{"recipe": {"name": "Oatmeal"}}]}]
+def generate_grocery(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    logs = db.query(UserMealLog).filter(UserMealLog.user_id == current_user.id).order_by(UserMealLog.meal_time.desc()).limit(7).all()
+    # Build list from real meals
+    daily_plans = [{"meals": [{"recipe": {"name": m.meal_name}} for m in logs]}]
     agg = s15_agg(daily_plans)
     g_list = s15_bld(agg)
     cost = s15_cst(g_list)
@@ -322,14 +433,43 @@ def get_micro_workout(req: MicroWorkoutRequest):
 
 # --- Service 17: Smart Calendar ---
 @router.post("/smart-calendar/reschedule")
-def reschedule(recovery_score: float = 35.0):
+def reschedule(user_id: int = 1, recovery_score: float = 35.0, db: Session = Depends(get_db)):
     cal = [{"title": "Heavy Squat Session", "type": "heavy_workout", "estimated_load": 80}]
     return s17_rsc(cal, recovery_score)
 
 # --- Service 18: AI Injury Predictor ---
 @router.get("/injury-predictor/evaluate")
-def evaluate_injury_risk():
-    return s18_wrn(14000.0, 10000.0, 5.5, ["shoulder"], [{"name": "Overhead Press"}])
+def evaluate_injury_risk(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import RecoveryScore, OnboardingProfile, WorkoutSession
+    
+    # 1. Fetch recent volume
+    sessions = db.query(WorkoutSession).filter(WorkoutSession.user_id == current_user.id).order_by(WorkoutSession.start_time.desc()).limit(14).all()
+    current_vol = sum([s.total_volume_kg for s in sessions[:7]]) # Last 7 sessions volume
+    avg_vol = sum([s.total_volume_kg for s in sessions[7:14]]) if len(sessions) > 7 else (current_vol * 0.8 + 1000)
+    if avg_vol == 0: avg_vol = 1000.0 # Prevent div zero
+    
+    # 2. Fetch sleep hours
+    rec = db.query(RecoveryScore).filter(RecoveryScore.user_id == current_user.id).order_by(RecoveryScore.id.desc()).first()
+    sleep_hrs = rec.sleep_hours if rec else 7.5
+    
+    # 3. Fetch injury history
+    onboarding = db.query(OnboardingProfile).filter(OnboardingProfile.user_id == current_user.id).first()
+    injuries = []
+    if onboarding and onboarding.injury_history:
+        injuries = list(onboarding.injury_history.keys())
+        
+    # 4. Fetch recent exercises
+    exercises = []
+    if sessions:
+        for s in sessions[:3]: # Look at last 3 workouts
+            for st in s.sets:
+                if st.exercise_name not in [e["name"] for e in exercises]:
+                    exercises.append({"name": st.exercise_name})
+                    
+    return s18_wrn(current_vol, avg_vol, sleep_hrs, injuries, exercises)
 
 # --- AI Coach ---
 from backend.core.guardrails import evaluate_ai_prompt_security
@@ -346,8 +486,28 @@ def coach_chat(msg: ChatMessage):
 
 # --- Analytics ---
 @router.get("/analytics/weekly-summary")
-def get_weekly_summary(user_id: int = 1):
-    return generate_weekly_performance_summary(user_id, 8, 82.5, 4)
+def get_weekly_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import WorkoutSession, RecoveryScore
+    from datetime import datetime, timedelta
+    
+    last_week = datetime.utcnow() - timedelta(days=7)
+    sessions = db.query(WorkoutSession).filter(
+        WorkoutSession.user_id == current_user.id,
+        WorkoutSession.start_time >= last_week,
+        WorkoutSession.status == "completed"
+    ).all()
+    
+    session_count = len(sessions)
+    total_vol = sum([s.total_volume_kg for s in sessions])
+    
+    rec = db.query(RecoveryScore).filter(RecoveryScore.user_id == current_user.id).order_by(RecoveryScore.id.desc()).first()
+    avg_rec = rec.total_recovery_score if rec else 85.0
+    
+    # 4 is max consecutive days simulated for now
+    return generate_weekly_performance_summary(current_user.id, session_count, avg_rec, 4)
 
 # --- Feature 39: Health Check & System Diagnostics ---
 @router.get("/health", response_model=HealthReport)
@@ -546,10 +706,13 @@ def get_micronutrient_matrix(user_id: int = 1, db: Session = Depends(get_db)):
 
 # --- Feature 25: Fitness XP & Level Progression System ---
 @router.get("/gamification/xp-status", response_model=XPStatusResponse)
-def get_xp_status(user_id: int = 1, db: Session = Depends(get_db)):
-    record = db.query(UserGamification).filter(UserGamification.user_id == user_id).first()
+def get_xp_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    record = db.query(UserGamification).filter(UserGamification.user_id == current_user.id).first()
     if not record:
-        record = UserGamification(user_id=user_id, xp=1450, level=4, total_xp=4450, unlocked_badges=[
+        record = UserGamification(user_id=current_user.id, xp=1450, level=4, total_xp=4450, unlocked_badges=[
             {"name": "Century Club", "description": "Lifted over 10,000kg cumulative volume"},
             {"name": "Consistency Champion", "description": "7-day workout streak achieved"}
         ])
@@ -571,24 +734,38 @@ def get_xp_status(user_id: int = 1, db: Session = Depends(get_db)):
 
 # --- Feature 26: Streak Engine & Freeze Safeguards ---
 @router.get("/gamification/streak", response_model=StreakStatusResponse)
-def get_streak_status(user_id: int = 1, db: Session = Depends(get_db)):
+def get_streak_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import StreakRecord
+    record = db.query(StreakRecord).filter(StreakRecord.user_id == current_user.id).first()
+    
     return StreakStatusResponse(
-        current_streak_days=12,
-        highest_streak_days=24,
+        current_streak_days=record.current_streak if record else 12,
+        highest_streak_days=record.highest_streak if record else 24,
         streak_freezes_available=2,
         is_protected_today=True
     )
 
 # --- Feature 28: Leaderboard & Challenge Engine ---
 @router.get("/gamification/leaderboard", response_model=List[LeaderboardItem])
-def get_leaderboard():
-    return [
-        LeaderboardItem(rank=1, user_name="Alex Rivera", xp=9850, weekly_volume_kg=24500.0, streak_days=28),
-        LeaderboardItem(rank=2, user_name="Sarah Chen", xp=8420, weekly_volume_kg=19200.0, streak_days=19),
-        LeaderboardItem(rank=3, user_name="You (FitX Athlete)", xp=4450, weekly_volume_kg=14500.0, streak_days=12),
-        LeaderboardItem(rank=4, user_name="Marcus Vance", xp=3900, weekly_volume_kg=12800.0, streak_days=8),
-        LeaderboardItem(rank=5, user_name="Elena Rostova", xp=3100, weekly_volume_kg=11000.0, streak_days=5)
-    ]
+def get_leaderboard(db: Session = Depends(get_db)):
+    # Get top users by XP
+    users_gam = db.query(UserGamification).order_by(UserGamification.total_xp.desc()).limit(10).all()
+    items = []
+    for idx, gam in enumerate(users_gam):
+        u = db.query(User).filter(User.id == gam.user_id).first()
+        items.append(LeaderboardItem(rank=idx+1, user_name=u.full_name if u else "Unknown", xp=gam.total_xp, weekly_volume_kg=0.0, streak_days=0))
+    
+    if not items:
+        # Fallback to demo users
+        items = [
+            LeaderboardItem(rank=1, user_name="Alex Rivera", xp=9850, weekly_volume_kg=24500.0, streak_days=28),
+            LeaderboardItem(rank=2, user_name="Sarah Chen", xp=8420, weekly_volume_kg=19200.0, streak_days=19),
+            LeaderboardItem(rank=3, user_name="You (FitX Athlete)", xp=4450, weekly_volume_kg=14500.0, streak_days=12)
+        ]
+    return items
 
 # --- Feature 29: Social Activity Feed & Kudos System ---
 @router.get("/social/feed", response_model=List[SocialFeedOut])
@@ -643,16 +820,26 @@ def sync_wearable(data: WearableSyncInput, user_id: int = 1, db: Session = Depen
 
 # --- Feature 33: VO2 Max & Aerobic Capacity Estimator ---
 @router.get("/wearables/vo2max", response_model=VO2MaxResponse)
-def estimate_vo2max(user_id: int = 1):
+def estimate_vo2max(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import UserTelemetry
+    recent = db.query(UserTelemetry).filter(UserTelemetry.user_id == current_user.id).order_by(UserTelemetry.recorded_at.desc()).first()
+    vo2max = recent.estimated_vo2max if recent else 48.5
+    
     return VO2MaxResponse(
-        estimated_vo2max=48.5,
-        fitness_category="Excellent (Top 15%)",
+        estimated_vo2max=vo2max,
+        fitness_category="Excellent (Top 15%)" if vo2max >= 45.0 else "Average",
         baseline_comparison="+3.2 ml/kg/min over past 30 days"
     )
 
 # --- Feature 34: Heart Rate Zone Distribution Tracker ---
 @router.get("/wearables/hr-zones", response_model=HRZoneDistributionResponse)
-def get_hr_zone_distribution():
+def get_hr_zone_distribution(
+    current_user: User = Depends(get_current_user)
+):
+    # Simulated for now until HR detailed sync is fully populated
     return HRZoneDistributionResponse(
         zone_1_recovery_min=8.5,
         zone_2_aerobic_min=18.0,
@@ -664,13 +851,21 @@ def get_hr_zone_distribution():
 
 # --- Feature 35: Body Composition Trajectory Forecaster ---
 @router.get("/analytics/body-composition-forecast", response_model=BodyFatForecastResponse)
-def forecast_body_composition(current_weight_kg: float = 75.0, current_body_fat_pct: float = 18.0):
+def forecast_body_composition(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.models.models import Profile
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    weight = profile.weight_kg if profile else 75.0
+    body_fat = profile.body_fat_pct if profile else 18.0
+    
     return BodyFatForecastResponse(
-        current_weight_kg=current_weight_kg,
-        current_body_fat_pct=current_body_fat_pct,
-        projected_4_weeks={"weight_kg": round(current_weight_kg - 1.2, 1), "body_fat_pct": round(current_body_fat_pct - 0.8, 1)},
-        projected_8_weeks={"weight_kg": round(current_weight_kg - 2.5, 1), "body_fat_pct": round(current_body_fat_pct - 1.8, 1)},
-        projected_12_weeks={"weight_kg": round(current_weight_kg - 3.8, 1), "body_fat_pct": round(current_body_fat_pct - 2.7, 1)}
+        current_weight_kg=weight,
+        current_body_fat_pct=body_fat,
+        projected_4_weeks={"weight_kg": round(weight - 1.2, 1), "body_fat_pct": round(body_fat - 0.8, 1)},
+        projected_8_weeks={"weight_kg": round(weight - 2.5, 1), "body_fat_pct": round(body_fat - 1.8, 1)},
+        projected_12_weeks={"weight_kg": round(weight - 3.8, 1), "body_fat_pct": round(body_fat - 2.7, 1)}
     )
 
 

@@ -1,19 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MessageSquare, Sparkles, Send, X, Bot, ArrowRight, ShieldCheck, Zap } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { dispatchAIAction } from "@/lib/state/appStateStore";
 
 export default function LiveAICoachOverlay() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState<Array<{ role: string; text: string; context?: any }>>([
-    {
-      role: "assistant",
-      text: "Hello! I am your FitX AI Agent. Type natural language commands like 'Shift workout to tomorrow', 'Log 500ml water', or 'Set readiness to 95%' to execute real state actions!"
-    }
-  ]);
+  const pathname = usePathname();
+  const isNutritionMode = pathname?.includes("meal");
+
+  const [messages, setMessages] = useState<Array<{ role: string; text: string; context?: any; actionPayload?: any }>>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          role: "assistant",
+          text: isNutritionMode
+            ? "Hello! I am your FitX Nutrition AI. I can generate meal plans, suggest healthy alternatives, and help you reach your macro goals. Try asking: 'Generate a high-protein dinner' or 'Replace rice'."
+            : "Hello! I am your FitX AI Agent. Type natural language commands like 'Shift workout to tomorrow', 'Log 500ml water', or 'Set readiness to 95%' to execute real state actions!"
+        }
+      ]);
+    }
+  }, [isNutritionMode, messages.length]);
 
   // Natural Language AI Command Parser & Action Execution Bridge
   const parseAndExecuteAIAction = (userText: string): string | null => {
@@ -69,11 +79,16 @@ export default function LiveAICoachOverlay() {
         body: JSON.stringify({ message: userText, user_id: 1 })
       });
       const data = await res.json();
+      if (data.action_payload && isNutritionMode) {
+        // Mock opening the review modal via state dispatcher if it's a nutrition plan change
+        dispatchAIAction("OPEN_MEAL_PLAN_REVIEW", data.action_payload);
+      }
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: actionReply || data.reply || "Analyzed your fitness context. Keep pushing with proper form!",
+          text: actionReply || data.reply || (isNutritionMode ? "I've analyzed your diet plan. Let me know what you want to adjust!" : "Analyzed your fitness context. Keep pushing with proper form!"),
+          actionPayload: data.action_payload
         }
       ]);
     } catch (e) {
@@ -159,12 +174,17 @@ export default function LiveAICoachOverlay() {
 
             {/* Quick Prompt Pill Chips */}
             <div className="flex space-x-1.5 overflow-x-auto no-scrollbar py-2 border-t border-white/10">
-              {[
+              {(isNutritionMode ? [
+                "What should I eat before leg day?",
+                "Generate a vegetarian dinner",
+                "Replace rice with something else",
+                "Increase today's protein"
+              ] : [
                 "Why am I weak today?",
                 "Suggest bench press alternative",
                 "Hotel 20-min workout",
                 "Fix shoulder pain"
-              ].map((chip) => (
+              ]).map((chip) => (
                 <button
                   key={chip}
                   onClick={() => {
@@ -184,7 +204,7 @@ export default function LiveAICoachOverlay() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Ask AI Coach (e.g., Why did chest not recover?)..."
+                placeholder={isNutritionMode ? "Ask Nutrition AI (e.g., Increase my protein)..." : "Ask AI Coach (e.g., Why did chest not recover?)..."}
                 className="flex-1 px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:border-fitx-cyan focus:outline-none"
               />
               <button

@@ -63,4 +63,32 @@ export const fitxAPI = {
       method: "POST",
       body: JSON.stringify({ message: msg }),
     }),
+  startWorkout: (name: string, temporalEventId?: string) =>
+    fetchFromAPI("/workout/start", { method: "POST", body: JSON.stringify({ name, temporal_event_id: temporalEventId }) }),
+  getActiveSession: () => fetchFromAPI("/workout/active"),
+  pauseSession: (sessionId: number) =>
+    fetchFromAPI("/workout/pause", { method: "POST", body: JSON.stringify({ session_id: sessionId }) }),
+  resumeSession: (sessionId: number) =>
+    fetchFromAPI("/workout/resume", { method: "POST", body: JSON.stringify({ session_id: sessionId }) }),
+  cancelSession: (sessionId: number, reason: string = "User cancelled") =>
+    fetchFromAPI("/workout/cancel", { method: "POST", body: JSON.stringify({ session_id: sessionId, reason }) }),
+  logSet: (payload: any) =>
+    fetchFromAPI("/workout/log-set", { method: "POST", body: JSON.stringify(payload) }),
+  skipSet: (sessionId: number, exerciseName: string, setNumber: number, reason: string) =>
+    fetchFromAPI("/workout/skip-set", { method: "POST", body: JSON.stringify({ session_id: sessionId, exercise_name: exerciseName, set_number: setNumber, reason }) }),
+  skipExercise: (sessionId: number, exerciseName: string, reason: string) =>
+    fetchFromAPI("/workout/skip-exercise", { method: "POST", body: JSON.stringify({ session_id: sessionId, exercise_name: exerciseName, reason }) }),
+  completeSession: (sessionId: number, notes: string = "") =>
+    fetchFromAPI(`/workout/complete?session_id=${sessionId}&notes=${encodeURIComponent(notes)}`, { method: "POST" }),
+  submitReport: (payload: any) =>
+    fetchFromAPI("/workout/performance-report", { method: "POST", body: JSON.stringify(payload) }),
+  getPlateCalculator: (targetWeightKg: number, barbellWeightKg: number = 20) =>
+    fetchFromAPI(`/workout/plate-calculator?target_weight_kg=${targetWeightKg}&barbell_weight_kg=${barbellWeightKg}`),
+  getWarmupProtocol: (exerciseName: string, workingWeightKg: number) =>
+    fetchFromAPI(`/workout/warmup-protocol?exercise_name=${encodeURIComponent(exerciseName)}&working_weight_kg=${workingWeightKg}`),
+  proposeAIPlanDiff: (requestType: string, currentExercises: any[]) =>
+    fetchFromAPI("/workout/intelligence/propose-plan-diff", { method: "POST", body: JSON.stringify({ request_type: requestType, current_exercises: currentExercises }) }),
+  applyAIPlanDiff: (planId: number, diffData: any) =>
+    fetchFromAPI("/workout/intelligence/apply-plan-diff", { method: "POST", body: JSON.stringify({ plan_id: planId, diff_data: diffData }) }),
 };
+

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Plus, Copy, MoreHorizontal, Activity, RefreshCw } from "lucide-react";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { fitxAPI } from "@/lib/api";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 export function WorkoutPlanner({ onAddExercise }: { onAddExercise?: () => void }) {
   const [events, setEvents] = useState<any[]>([]);
@@ -109,13 +110,34 @@ export function WorkoutPlanner({ onAddExercise }: { onAddExercise?: () => void }
                   </div>
                   <span className="text-[9px] font-bold text-slate-500 uppercase">5 Exercises • 45m</span>
                   {isToday && (
-                    <button className="mt-2 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-md shadow-emerald-500/25 hover:bg-emerald-600 transition-colors active:scale-95">
+                    <button 
+                      onClick={async () => {
+                        soundscape.playTapSound();
+                        await useWorkoutStore.getState().startWorkout("Push Hypertrophy Protocol");
+                        if (onAddExercise) onAddExercise();
+                      }}
+                      className="mt-2 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-md shadow-emerald-500/25 hover:bg-emerald-600 transition-colors active:scale-95"
+                    >
                       Start Now
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-[88px] border-2 border-dashed border-slate-200 rounded-xl mt-2 text-slate-400 hover:text-emerald-500 hover:border-emerald-200 transition-colors cursor-pointer group hover:bg-emerald-50/30" onClick={handleAction}>
+                <div 
+                  className="flex flex-col items-center justify-center h-[88px] border-2 border-dashed border-slate-200 rounded-xl mt-2 text-slate-400 hover:text-emerald-500 hover:border-emerald-200 transition-colors cursor-pointer group hover:bg-emerald-50/30" 
+                  onClick={async () => {
+                    soundscape.playTapSound();
+                    try {
+                      await fitxAPI.createPlan({
+                        name: "Rest & Active Recovery",
+                        goal: "Recovery",
+                        planned_date: dateStr,
+                        workout_data: { exercises: [] }
+                      });
+                      fetchEvents();
+                    } catch (e) { console.warn(e); }
+                  }}
+                >
                   <Plus className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
                   <span className="text-[9px] font-black uppercase tracking-wider">Plan Rest</span>
                 </div>

@@ -332,3 +332,119 @@ def agent_chat(
     from backend.services.workout_intelligence.ai_coach import process_coach_chat
     return process_coach_chat(db, current_user.id, inp.message)
 
+class PauseSessionInput(BaseModel):
+    session_id: int
+
+class CancelSessionInput(BaseModel):
+    session_id: int
+    reason: str = "User cancelled"
+
+class SkipSetInput(BaseModel):
+    session_id: int
+    exercise_name: str
+    set_number: int
+    reason: str
+
+class SkipExerciseInput(BaseModel):
+    session_id: int
+    exercise_name: str
+    reason: str
+
+class PerformanceReportInput(BaseModel):
+    session_id: int
+    pain_level: int = 0
+    energy_level: int = 5
+    form_confidence: int = 5
+    difficulty_level: int = 5
+    motivation_level: int = 5
+    notes: str = ""
+
+class ProposeDiffInput(BaseModel):
+    request_type: str = "general"
+    current_exercises: List[Any] = []
+
+class ApplyDiffInput(BaseModel):
+    plan_id: int = 0
+    diff_data: Dict[str, Any]
+
+@router.post("/pause")
+def pause_session(
+    inp: PauseSessionInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import pause_workout_session
+    session = pause_workout_session(db, current_user.id, inp.session_id)
+    return {"status": "paused", "session_id": session.id}
+
+@router.post("/resume")
+def resume_session(
+    inp: PauseSessionInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import resume_workout_session
+    session = resume_workout_session(db, current_user.id, inp.session_id)
+    return {"status": "in_progress", "session_id": session.id}
+
+@router.post("/cancel")
+def cancel_session(
+    inp: CancelSessionInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import cancel_workout_session
+    session = cancel_workout_session(db, current_user.id, inp.session_id, inp.reason)
+    return {"status": "cancelled", "session_id": session.id}
+
+@router.post("/skip-set")
+def skip_set(
+    inp: SkipSetInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import skip_workout_set
+    res = skip_workout_set(db, current_user.id, inp.session_id, inp.exercise_name, inp.set_number, inp.reason)
+    return {"status": "skipped", "set_id": res.id}
+
+@router.post("/skip-exercise")
+def skip_exercise(
+    inp: SkipExerciseInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import skip_workout_exercise
+    return skip_workout_exercise(db, current_user.id, inp.session_id, inp.exercise_name, inp.reason)
+
+@router.post("/performance-report")
+def performance_report(
+    inp: PerformanceReportInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_execution.engine import log_performance_report
+    return log_performance_report(
+        db, current_user.id, inp.session_id,
+        inp.pain_level, inp.energy_level, inp.form_confidence,
+        inp.difficulty_level, inp.motivation_level, inp.notes
+    )
+
+@router.post("/intelligence/propose-plan-diff")
+def propose_plan_diff(
+    inp: ProposeDiffInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_intelligence.ai_coach import propose_plan_diff as propose_diff
+    return propose_diff(db, current_user.id, inp.current_exercises, inp.request_type)
+
+@router.post("/intelligence/apply-plan-diff")
+def apply_plan_diff(
+    inp: ApplyDiffInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_intelligence.ai_coach import apply_plan_diff as apply_diff
+    return apply_diff(db, current_user.id, inp.plan_id, inp.diff_data)
+
+

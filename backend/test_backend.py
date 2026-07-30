@@ -403,9 +403,94 @@ def run_all_tests():
     assert r.status_code == 200, f"Body fat forecast failed: {r.text}"
     print(f"[OK] Body Composition Trajectory Forecaster OK: 12-week BF%={r.json()['projected_12_weeks']['body_fat_pct']}%")
 
-    print("\nALL FITX AI BACKEND SERVICES (100% OF 40 FOUNDATIONAL FEATURES) PASSED VERIFICATION!")
+    # 35. Workout Execution & Lifecycle Engine Test
+    r_start = client.post("/api/v1/workout/start", json={"name": "End-to-End Test Routine"}, headers=auth_headers)
+    assert r_start.status_code == 200, f"Workout start failed: {r_start.text}"
+    session_id = r_start.json()["id"]
+    print(f"[OK] Workout Execution Start OK: Session ID={session_id}")
+
+    # Pause & Resume Session
+    r_pause = client.post("/api/v1/workout/pause", json={"session_id": session_id}, headers=auth_headers)
+    assert r_pause.status_code == 200, f"Workout pause failed: {r_pause.text}"
+    r_resume = client.post("/api/v1/workout/resume", json={"session_id": session_id}, headers=auth_headers)
+    assert r_resume.status_code == 200, f"Workout resume failed: {r_resume.text}"
+    print("[OK] Workout Pause & Resume Lifecycle OK")
+
+    # Log Set & PR Detection
+    from datetime import datetime
+    unique_ex_name = f"Incline Barbell Press {datetime.utcnow().timestamp()}"
+    r_log = client.post("/api/v1/workout/log-set", json={
+        "session_id": session_id,
+        "exercise_name": unique_ex_name,
+        "set_number": 1,
+        "set_type": "work",
+        "planned_reps": 10,
+        "reps": 10,
+        "target_weight_kg": 120.0,
+        "weight_kg": 120.0,
+        "rpe": 8.0,
+        "pain_level": 0,
+        "form_rating": 5,
+        "notes": "Smooth execution"
+    }, headers=auth_headers)
+    assert r_log.status_code == 200, f"Log set failed: {r_log.text}"
+    assert r_log.json()["is_pr"] is True, "Expected first set to trigger PR!"
+    print(f"[OK] Log Set & PR Detection OK: Estimated 1RM={r_log.json()['estimated_1rm']}kg")
+
+    # Skip Set & Skip Exercise
+    r_skip_set = client.post("/api/v1/workout/skip-set", json={
+        "session_id": session_id,
+        "exercise_name": unique_ex_name,
+        "set_number": 2,
+        "reason": "Pain/Discomfort"
+    }, headers=auth_headers)
+    assert r_skip_set.status_code == 200, f"Skip set failed: {r_skip_set.text}"
+
+    r_skip_ex = client.post("/api/v1/workout/skip-exercise", json={
+        "session_id": session_id,
+        "exercise_name": unique_ex_name,
+        "reason": "Equipment unavailable"
+    }, headers=auth_headers)
+    assert r_skip_ex.status_code == 200, f"Skip exercise failed: {r_skip_ex.text}"
+    print("[OK] Skip Set & Skip Exercise Analytics OK")
+
+    # Performance Reporting
+    r_report = client.post("/api/v1/workout/performance-report", json={
+        "session_id": session_id,
+        "pain_level": 0,
+        "energy_level": 5,
+        "form_confidence": 5,
+        "difficulty_level": 4,
+        "motivation_level": 5,
+        "notes": "Excellent session response"
+    }, headers=auth_headers)
+    assert r_report.status_code == 200, f"Performance report failed: {r_report.text}"
+    print("[OK] Workout Performance Report Persistence OK")
+
+    # Complete Session
+    r_complete = client.post(f"/api/v1/workout/complete?session_id={session_id}&notes=Finished", headers=auth_headers)
+    assert r_complete.status_code == 200, f"Workout complete failed: {r_complete.text}"
+    print(f"[OK] Workout Complete OK: Total Volume={r_complete.json()['total_volume_kg']}kg")
+
+    # AI Plan Diff Propose & Apply
+    r_prop = client.post("/api/v1/workout/intelligence/propose-plan-diff", json={
+        "request_type": "shoulder_pain",
+        "current_exercises": []
+    }, headers=auth_headers)
+    assert r_prop.status_code == 200, f"Propose diff failed: {r_prop.text}"
+    diff_data = r_prop.json()["diff_data"]
+
+    r_apply = client.post("/api/v1/workout/intelligence/apply-plan-diff", json={
+        "plan_id": 0,
+        "diff_data": diff_data
+    }, headers=auth_headers)
+    assert r_apply.status_code == 200, f"Apply diff failed: {r_apply.text}"
+    print(f"[OK] AI Plan Review & Diff Application OK: Updated Exercises={r_apply.json()['updated_exercise_count']}")
+
+    print("\nALL FITX AI BACKEND SERVICES & WORKOUT MODULE END-TO-END PASSED VERIFICATION!")
 
 if __name__ == "__main__":
     run_all_tests()
+
 
 

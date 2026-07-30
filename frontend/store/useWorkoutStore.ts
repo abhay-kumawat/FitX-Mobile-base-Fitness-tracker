@@ -1,11 +1,16 @@
 import { create } from "zustand";
+import { fitxAPI } from "@/lib/api";
 
 export interface LoggedSet {
   setNumber: number;
   weightKg: number;
   reps: number;
   completed: boolean;
-  type: "warmup" | "work";
+  type: "warmup" | "work" | "failure" | "dropset";
+  failureReason?: string;
+  painLevel?: number;
+  formRating?: number;
+  rpe?: number;
 }
 
 export interface ExerciseItem {
@@ -16,10 +21,15 @@ export interface ExerciseItem {
   tips: string[];
   targetSets: number;
   sets: LoggedSet[];
+  tempo?: string;
+  restSeconds?: number;
 }
 
 interface WorkoutState {
   isWorkoutActive: boolean;
+  activeSessionId: number | null;
+  workoutStatus: "idle" | "in_progress" | "paused" | "completed" | "cancelled";
+  workoutName: string;
   currentExerciseIndex: number;
   exercises: ExerciseItem[];
   restCountdownSeconds: number;
@@ -27,23 +37,37 @@ interface WorkoutState {
   showWarmupModal: boolean;
   showPlateModal: boolean;
   showVictoryModal: boolean;
+  showReportModal: boolean;
   selectedWeightForPlate: number;
+  lastSessionSummary: any;
 
-  startWorkout: () => void;
-  toggleSetComplete: (exerciseId: string, setIndex: number) => void;
+  syncActiveSession: () => Promise<void>;
+  startWorkout: (name?: string) => Promise<void>;
+  pauseWorkout: () => Promise<void>;
+  resumeWorkout: () => Promise<void>;
+  cancelWorkout: (reason?: string) => Promise<void>;
+  finishWorkout: (reportData?: any) => Promise<void>;
+  
+  toggleSetComplete: (exerciseId: string, setIndex: number, extraData?: any) => Promise<void>;
   updateSetInput: (exerciseId: string, setIndex: number, weightKg: number, reps: number) => void;
+  skipSet: (exerciseId: string, setIndex: number, reason: string) => Promise<void>;
+  skipExercise: (exerciseId: string, reason: string) => Promise<void>;
+
   nextExercise: () => void;
   previousExercise: () => void;
   startRestTimer: (seconds?: number) => void;
   stopRestTimer: () => void;
   tickRestTimer: () => void;
+  
   toggleWarmupModal: (show?: boolean) => void;
   openPlateModal: (weightKg: number) => void;
   closePlateModal: () => void;
+  toggleReportModal: (show?: boolean) => void;
+  
   addExercise: (exercise: any) => void;
   removeExercise: (exerciseId: string) => void;
   reorderExercises: (startIndex: number, endIndex: number) => void;
-  finishWorkout: () => void;
+  loadPlanIntoActive: (planName: string, exercisesList: ExerciseItem[]) => void;
   closeVictoryModal: () => void;
 }
 
@@ -105,6 +129,9 @@ const initialExercises: ExerciseItem[] = [
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   isWorkoutActive: false,
+  activeSessionId: null,
+  workoutStatus: "idle",
+  workoutName: "Hypertrophy Push Protocol",
   currentExerciseIndex: 0,
   exercises: initialExercises,
   restCountdownSeconds: 90,
@@ -112,22 +139,139 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   showWarmupModal: false,
   showPlateModal: false,
   showVictoryModal: false,
+  showReportModal: false,
   selectedWeightForPlate: 80,
+  lastSessionSummary: null,
 
-  startWorkout: () => set({ isWorkoutActive: true, currentExerciseIndex: 0 }),
-  
-  toggleSetComplete: (exerciseId, setIndex) => {
-    set((state) => {
-      const updatedExercises = state.exercises.map((ex) => {
-        if (ex.id !== exerciseId) return ex;
-        const newSets = ex.sets.map((s, idx) => {
-          if (idx !== setIndex) return s;
-          return { ...s, completed: !s.completed };
+  syncActiveSession: async () => {
+    try {
+      const active = await fitxAPI.getActiveSession();
+      if (active && active.id) {
+        set({
+          isWorkoutActive: active.status === "in_progress",
+          activeSessionId: active.id,
+          workoutStatus: active.status,
+          workoutName: active.name || "Hypertrophy Push Protocol"
         });
-        return { ...ex, sets: newSets };
-      });
-      return { exercises: updatedExercises };
+      }
+    } catch (e) {
+      console.warn("Failed to sync active session", e);
+    }
+  },
+
+  startWorkout: async (name) => {
+    const sessionName = name || get().workoutName;
+    try {
+      const res = await fitxAPI.startWorkout(sessionName);
+      if (res && res.id) {
+        set({
+          isWorkoutActive: true,
+          activeSessionId: res.id,
+          workoutStatus: "in_progress",
+          workoutName: sessionName,
+          currentExerciseIndex: 0
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn("Start workout API error, fallback to local", e);
+    }
+    set({
+      isWorkoutActive: true,
+      activeSessionId: Date.now(),
+      workoutStatus: "in_progress",
+      workoutName: sessionName,
+      currentExerciseIndex: 0
     });
+  },
+
+  pauseWorkout: async () => {
+    const { activeSessionId } = get();
+    if (activeSessionId) {
+      try {
+        await fitxAPI.pauseSession(activeSessionId);
+      } catch (e) { console.warn(e); }
+    }
+    set({ workoutStatus: "paused" });
+  },
+
+  resumeWorkout: async () => {
+    const { activeSessionId } = get();
+    if (activeSessionId) {
+      try {
+        await fitxAPI.resumeSession(activeSessionId);
+      } catch (e) { console.warn(e); }
+    }
+    set({ workoutStatus: "in_progress" });
+  },
+
+  cancelWorkout: async (reason = "User cancelled") => {
+    const { activeSessionId } = get();
+    if (activeSessionId) {
+      try {
+        await fitxAPI.cancelSession(activeSessionId, reason);
+      } catch (e) { console.warn(e); }
+    }
+    set({
+      isWorkoutActive: false,
+      activeSessionId: null,
+      workoutStatus: "cancelled"
+    });
+  },
+
+  toggleSetComplete: async (exerciseId, setIndex, extraData) => {
+    const { exercises, activeSessionId, startRestTimer } = get();
+    const ex = exercises.find((e) => e.id === exerciseId);
+    if (!ex) return;
+
+    const currentSet = ex.sets[setIndex];
+    if (!currentSet) return;
+
+    const newCompleted = !currentSet.completed;
+
+    // Local optimistic update
+    const updatedExercises = exercises.map((item) => {
+      if (item.id !== exerciseId) return item;
+      const newSets = item.sets.map((s, idx) => {
+        if (idx !== setIndex) return s;
+        return {
+          ...s,
+          completed: newCompleted,
+          failureReason: extraData?.failureReason || s.failureReason,
+          painLevel: extraData?.painLevel || s.painLevel,
+          formRating: extraData?.formRating || s.formRating
+        };
+      });
+      return { ...item, sets: newSets };
+    });
+
+    set({ exercises: updatedExercises });
+
+    if (newCompleted) {
+      startRestTimer(ex.restSeconds || 90);
+    }
+
+    // Backend sync
+    if (activeSessionId && newCompleted) {
+      try {
+        await fitxAPI.logSet({
+          session_id: activeSessionId,
+          exercise_name: ex.name,
+          set_number: currentSet.setNumber,
+          set_type: currentSet.type,
+          planned_reps: currentSet.reps,
+          reps: extraData?.reps || currentSet.reps,
+          target_weight_kg: currentSet.weightKg,
+          weight_kg: extraData?.weightKg || currentSet.weightKg,
+          failure_reason: extraData?.failureReason || null,
+          pain_level: extraData?.painLevel || 0,
+          form_rating: extraData?.formRating || 5,
+          notes: extraData?.notes || ""
+        });
+      } catch (e) {
+        console.warn("Set log API failed", e);
+      }
+    }
   },
 
   updateSetInput: (exerciseId, setIndex, weightKg, reps) => {
@@ -144,19 +288,99 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     });
   },
 
+  skipSet: async (exerciseId, setIndex, reason) => {
+    const { exercises, activeSessionId } = get();
+    const ex = exercises.find((e) => e.id === exerciseId);
+    if (!ex) return;
+
+    const updatedExercises = exercises.map((item) => {
+      if (item.id !== exerciseId) return item;
+      const newSets = item.sets.map((s, idx) => {
+        if (idx !== setIndex) return s;
+        return { ...s, completed: false, failureReason: `Skipped: ${reason}` };
+      });
+      return { ...item, sets: newSets };
+    });
+
+    set({ exercises: updatedExercises });
+
+    if (activeSessionId) {
+      try {
+        await fitxAPI.skipSet(activeSessionId, ex.name, setIndex + 1, reason);
+      } catch (e) { console.warn(e); }
+    }
+  },
+
+  skipExercise: async (exerciseId, reason) => {
+    const { exercises, activeSessionId, currentExerciseIndex } = get();
+    const ex = exercises.find((e) => e.id === exerciseId);
+    if (!ex) return;
+
+    const updatedExercises = exercises.filter((e) => e.id !== exerciseId);
+    set({
+      exercises: updatedExercises,
+      currentExerciseIndex: Math.min(currentExerciseIndex, updatedExercises.length - 1)
+    });
+
+    if (activeSessionId) {
+      try {
+        await fitxAPI.skipExercise(activeSessionId, ex.name, reason);
+      } catch (e) { console.warn(e); }
+    }
+  },
+
+  finishWorkout: async (reportData) => {
+    const { activeSessionId, exercises } = get();
+    let summary = null;
+
+    let totalVolume = 0;
+    let totalSets = 0;
+    exercises.forEach((ex) => {
+      ex.sets.forEach((s) => {
+        if (s.completed) {
+          totalVolume += s.weightKg * s.reps;
+          totalSets += 1;
+        }
+      });
+    });
+
+    if (activeSessionId) {
+      try {
+        if (reportData) {
+          await fitxAPI.submitReport({
+            session_id: activeSessionId,
+            ...reportData
+          });
+        }
+        const res = await fitxAPI.completeSession(activeSessionId, reportData?.notes || "");
+        summary = res;
+      } catch (e) {
+        console.warn("Complete workout API error", e);
+      }
+    }
+
+    set({
+      isWorkoutActive: false,
+      activeSessionId: null,
+      workoutStatus: "completed",
+      showVictoryModal: true,
+      lastSessionSummary: summary || { total_volume_kg: totalVolume, total_sets: totalSets }
+    });
+  },
+
   addExercise: (ex) => {
     set((state) => {
       const newExercise: ExerciseItem = {
         id: ex.id || Date.now().toString(),
         name: ex.name,
-        muscleTag: ex.primary_muscle || "General",
-        formGuard: "Form Guard: Focus on technique",
-        tips: ex.instructions || ["Maintain proper form"],
+        muscleTag: ex.primary_muscle || "General Muscle",
+        formGuard: "Form Guard: Maintain controlled tempo",
+        tips: ex.instructions || ["Maintain proper form and core brace"],
         targetSets: 3,
         sets: [
-          { setNumber: 1, weightKg: 0, reps: 10, completed: false, type: "work" },
-          { setNumber: 2, weightKg: 0, reps: 10, completed: false, type: "work" },
-          { setNumber: 3, weightKg: 0, reps: 10, completed: false, type: "work" }
+          { setNumber: 1, weightKg: 20, reps: 10, completed: false, type: "work" },
+          { setNumber: 2, weightKg: 25, reps: 10, completed: false, type: "work" },
+          { setNumber: 3, weightKg: 25, reps: 10, completed: false, type: "work" }
         ]
       };
       return { exercises: [...state.exercises, newExercise] };
@@ -175,6 +399,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       const [removed] = result.splice(startIndex, 1);
       result.splice(endIndex, 0, removed);
       return { exercises: result };
+    });
+  },
+
+  loadPlanIntoActive: (planName, exercisesList) => {
+    set({
+      workoutName: planName,
+      exercises: exercisesList,
+      currentExerciseIndex: 0
     });
   },
 
@@ -204,7 +436,6 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   toggleWarmupModal: (show) => set((state) => ({ showWarmupModal: show ?? !state.showWarmupModal })),
   openPlateModal: (weightKg) => set({ showPlateModal: true, selectedWeightForPlate: weightKg }),
   closePlateModal: () => set({ showPlateModal: false }),
-  
-  finishWorkout: () => set({ isWorkoutActive: false, showVictoryModal: true }),
+  toggleReportModal: (show) => set((state) => ({ showReportModal: show ?? !state.showReportModal })),
   closeVictoryModal: () => set({ showVictoryModal: false }),
 }));

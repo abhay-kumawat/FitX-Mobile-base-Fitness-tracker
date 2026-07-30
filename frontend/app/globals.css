@@ -310,10 +310,6 @@ input, select, textarea, button {
 }
 
 /* Ensure flex/grid children don't burst out of parent containers */
-.flex, .grid {
-  max-width: 100%;
-}
-
 .min-w-0 {
   min-width: 0px !important;
 }

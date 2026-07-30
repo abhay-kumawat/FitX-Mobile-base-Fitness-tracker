@@ -5,11 +5,66 @@ import { motion, useDragControls, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Minimize2, CheckCircle2, ChevronRight, Activity, Calendar, LayoutDashboard } from "lucide-react";
 import CoachChatWindow from "./CoachChatWindow";
 
+import { fitxAPI } from "@/lib/api";
+import { AIPlanReviewModal } from "./AIPlanReviewModal";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
+
 export function DraggableFloatingAI() {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"chat" | "workspace" | "quick">("chat");
+  const [diffData, setDiffData] = useState<any>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const dragControls = useDragControls();
-  
+
+  const handleProposeDiff = async (type: string) => {
+    try {
+      const currentExercises = useWorkoutStore.getState().exercises;
+      const res = await fitxAPI.proposeAIPlanDiff(type, currentExercises);
+      if (res && res.diff_data) {
+        setDiffData(res.diff_data);
+        setShowReviewModal(true);
+      }
+    } catch (e) {
+      console.warn("Failed to propose diff", e);
+    }
+  };
+
+  const handleApproveDiff = async () => {
+    if (!diffData) return;
+    try {
+      await fitxAPI.applyAIPlanDiff(1, diffData);
+      
+      // Update local Zustand exercises
+      const store = useWorkoutStore.getState();
+      let currentList = [...store.exercises];
+
+      // Process removals
+      const removedNames = (diffData.removed || []).map((r: any) => r.name);
+      currentList = currentList.filter(ex => !removedNames.includes(ex.name));
+
+      // Process additions
+      (diffData.added || []).forEach((added: any, idx: number) => {
+        currentList.push({
+          id: `ai_add_${Date.now()}_${idx}`,
+          name: added.name,
+          muscleTag: "AI Safe Target",
+          formGuard: "Form Guard: AI Guided Tempo",
+          tips: [added.rationale],
+          targetSets: 3,
+          sets: [
+            { setNumber: 1, weightKg: 20, reps: 10, completed: false, type: "work" },
+            { setNumber: 2, weightKg: 25, reps: 10, completed: false, type: "work" },
+            { setNumber: 3, weightKg: 25, reps: 8, completed: false, type: "work" }
+          ]
+        });
+      });
+
+      store.loadPlanIntoActive(store.workoutName, currentList);
+    } catch (e) {
+      console.warn("Failed to apply diff", e);
+    }
+  };
+
   // Track window dimensions for drag constraints
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   
@@ -126,17 +181,20 @@ export function DraggableFloatingAI() {
                     <div className="flex flex-col gap-3">
                       <div className="p-3 bg-slate-800 rounded-lg flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-red-400 line-through">Bench Press</span>
+                          <span className="text-red-400 line-through">Barbell Bench</span>
                           <ChevronRight className="w-4 h-4 text-slate-500" />
-                          <span className="text-emerald-400 font-bold">Machine Press</span>
+                          <span className="text-emerald-400 font-bold">Neutral DB Press</span>
                         </div>
                         <p className="text-xs text-slate-400">
-                          <span className="text-emerald-500 font-bold">Reason:</span> Shoulder pain increased over the last 5 workouts.
+                          <span className="text-emerald-500 font-bold">Reason:</span> Shoulder joint safety optimization.
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <button className="flex-1 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-md hover:bg-emerald-600 transition-colors">Apply</button>
-                          <button className="flex-1 py-1.5 bg-slate-700 text-white text-xs font-bold rounded-md hover:bg-slate-600 transition-colors">Modify</button>
-                          <button className="flex-1 py-1.5 bg-slate-900 text-slate-400 text-xs font-bold rounded-md border border-slate-700 hover:text-white transition-colors">Ignore</button>
+                          <button 
+                            onClick={() => handleProposeDiff("shoulder_pain")}
+                            className="flex-1 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-md hover:bg-emerald-600 transition-colors"
+                          >
+                            Review Diff
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -147,12 +205,16 @@ export function DraggableFloatingAI() {
               {mode === "quick" && (
                 <div className="absolute inset-0 p-4 grid grid-cols-2 gap-3 bg-slate-950 content-start">
                   {[
-                    { icon: <Activity />, label: "Recovery Check" },
-                    { icon: <LayoutDashboard />, label: "Generate Workout" },
-                    { icon: <Calendar />, label: "Weekly Review" },
-                    { icon: <Sparkles />, label: "Replace Exercise" }
+                    { icon: <Activity />, label: "Recovery Check", type: "general" },
+                    { icon: <LayoutDashboard />, label: "Generate Workout", type: "general" },
+                    { icon: <Calendar />, label: "Weekly Review", type: "general" },
+                    { icon: <Sparkles />, label: "Replace Exercise", type: "shoulder_pain" }
                   ].map((action, i) => (
-                    <button key={i} className="flex flex-col items-center gap-2 p-4 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-emerald-500/50 transition-all group">
+                    <button 
+                      key={i} 
+                      onClick={() => handleProposeDiff(action.type)}
+                      className="flex flex-col items-center gap-2 p-4 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-emerald-500/50 transition-all group"
+                    >
                       <div className="text-slate-400 group-hover:text-emerald-400">{action.icon}</div>
                       <span className="text-xs font-bold text-slate-300">{action.label}</span>
                     </button>
@@ -163,6 +225,15 @@ export function DraggableFloatingAI() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Plan Review Diff Modal */}
+      <AIPlanReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        diffData={diffData}
+        onApprove={handleApproveDiff}
+        onReject={() => setShowReviewModal(false)}
+      />
     </>
   );
 }

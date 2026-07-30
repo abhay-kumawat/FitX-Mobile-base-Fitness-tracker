@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import uuid
 from backend.models.models import (
-    User Gamification, WorkoutSession, WorkoutSet, DailyNutritionSummary,
+    UserGamification, WorkoutSession, WorkoutSet, DailyNutritionSummary,
     PsychologicalLog, BodyMeasurementLog, TemporalEvent, AIWorkoutRecommendation
 )
 from backend.schemas.growth import (

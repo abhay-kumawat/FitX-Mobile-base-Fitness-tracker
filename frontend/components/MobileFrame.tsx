@@ -97,6 +97,11 @@ export default function MobileFrame({ children }: MobileFrameProps) {
               ? `${widthClass} my-0 sm:my-2 rounded-[32px] sm:rounded-[48px] border-4 sm:border-[10px] border-slate-900 bg-[var(--bg-main)] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] relative h-[100dvh] sm:h-[850px] overflow-hidden [transform:translateZ(0)]`
               : "max-w-md mx-auto h-[100dvh] bg-[var(--bg-main)] relative overflow-hidden [transform:translateZ(0)] flex flex-col"
           }`}
+          style={{
+            maxWidth: isFrameMode ? (frameWidth === "standard" ? "412px" : "360px") : "28rem",
+            "--safe-area-top": isFrameMode ? "44px" : "0px",
+            "--safe-area-bottom": isFrameMode ? "34px" : "0px"
+          } as React.CSSProperties}
         >
           {/* iOS Dynamic Status Bar (Visible in Frame Mode) */}
           {isFrameMode && (

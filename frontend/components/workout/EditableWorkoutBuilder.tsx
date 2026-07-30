@@ -5,13 +5,27 @@ import { Plus, GripVertical, Trash2, Edit3, Save } from "lucide-react";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { useWorkoutStore } from "@/store/useWorkoutStore";
 
-export function EditableWorkoutBuilder() {
+import { fitxAPI } from "@/lib/api";
+
+export function EditableWorkoutBuilder({ onAddExercise }: { onAddExercise?: () => void }) {
   const [isEditing, setIsEditing] = useState(false);
   const exercises = useWorkoutStore((state) => state.exercises);
   const removeExercise = useWorkoutStore((state) => state.removeExercise);
 
-  const toggleEdit = () => {
+  const toggleEdit = async () => {
     soundscape.playTapSound();
+    if (isEditing) {
+      // Save plan to backend
+      try {
+        await fitxAPI.createPlan({
+          name: "Custom Workout Plan",
+          goal: "Hypertrophy",
+          workout_data: { exercises }
+        });
+      } catch (e) {
+        console.warn("Failed to persist plan to backend", e);
+      }
+    }
     setIsEditing(!isEditing);
   };
 
@@ -28,7 +42,7 @@ export function EditableWorkoutBuilder() {
           onClick={toggleEdit}
           className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
         >
-          {isEditing ? <><Save className="w-3 h-3" /> Save</> : <><Edit3 className="w-3 h-3" /> Edit</>}
+          {isEditing ? <><Save className="w-3 h-3 text-emerald-600" /> Save Plan</> : <><Edit3 className="w-3 h-3" /> Edit</>}
         </button>
       </div>
 
@@ -59,7 +73,10 @@ export function EditableWorkoutBuilder() {
       </div>
 
       {isEditing && (
-        <button className="mt-2 w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-xs font-black text-slate-400 uppercase tracking-widest hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center gap-1">
+        <button 
+          onClick={() => onAddExercise && onAddExercise()}
+          className="mt-2 w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-xs font-black text-slate-400 uppercase tracking-widest hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center gap-1"
+        >
           <Plus className="w-4 h-4" /> Add Exercise
         </button>
       )}
