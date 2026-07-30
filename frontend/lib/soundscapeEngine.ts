@@ -77,6 +77,10 @@ class SoundscapeEngine {
     this.playSetCompleteSound();
   }
 
+  playSuccessChime() {
+    this.playSetCompleteSound();
+  }
+
   // 3. Victory Fanfare (Full Workout Completed)
   playVictoryFanfare() {
     try {

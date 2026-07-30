@@ -76,7 +76,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
         avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c",
       });
       setActiveTab("2fa");
-      soundscape.playSuccessChime();
+      soundscape.playSuccessSound();
     }, 900);
   };
 
@@ -89,7 +89,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
     }
     loginWithEmail(emailInput, nameInput);
     setSuccessMessage("Logged in successfully!");
-    soundscape.playSuccessChime();
+    soundscape.playSuccessSound();
     setTimeout(() => {
       onClose();
       setSuccessMessage("");
