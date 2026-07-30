@@ -22,7 +22,8 @@ import {
   Layers, 
   ArrowRight,
   Zap,
-  Dumbbell
+  Dumbbell,
+  Globe
 } from "lucide-react";
 
 export default function HomeHubPage() {
@@ -46,14 +47,14 @@ export default function HomeHubPage() {
   const activeQuests = (quests || []).slice(0, 3);
 
   const featureLaunchers = [
-    { name: "Overload Workouts", desc: "Form Guard & Set Tracker", href: "/workout", icon: Dumbbell, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    { name: "Platform Landing Page", desc: "Showcase Hero, Google Auth 2FA & Pricing", href: "/landing", icon: Globe, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    { name: "Overload Workouts", desc: "Form Guard & Set Tracker", href: "/workout", icon: Dumbbell, color: "text-teal-600 bg-teal-50 border-teal-200" },
     { name: "HPE Recovery Sanctuary", desc: "180px HRV Ring & 4-7-8 Pacer", href: "/recovery", icon: Zap, color: "text-sky-600 bg-sky-50 border-sky-200" },
     { name: "Smart Meal & Todo Tracker", desc: "Todo Checklist, Scientific Macros & Hydration Engine", href: "/meal-planner", icon: Utensils, color: "text-amber-600 bg-amber-50 border-amber-200" },
     { name: "Skill Tree & Wardrobe", desc: "Flexy Costume Shop & Badges", href: "/skill-tree", icon: Trophy, color: "text-purple-600 bg-purple-50 border-purple-200" },
     { name: "AI Exercise Graph", desc: "Taxonomy & Biomechanical Safety", href: "/exercises", icon: BookOpen, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     { name: "AI Coach Chat (RAG)", desc: "Evidence Level I-V Knowledge Graph", href: "/coach", icon: Sparkles, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
     { name: "Digital Twin Avatar", desc: "13-Layer Engine & Scenario Simulator", href: "/profile", icon: Cpu, color: "text-cyan-600 bg-cyan-50 border-cyan-200" },
-    { name: "Wearables Telemetry", desc: "Apple Watch, Oura & Garmin Sync", href: "/wearables", icon: Activity, color: "text-rose-600 bg-rose-50 border-rose-200" },
   ];
 
   return (

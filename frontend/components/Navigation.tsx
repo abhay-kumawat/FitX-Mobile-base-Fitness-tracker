@@ -20,19 +20,26 @@ import {
   Calendar,
   Activity,
   Cpu,
-  Layers
+  Layers,
+  ShieldCheck,
+  Globe
 } from "lucide-react";
 import ConfettiBurst from "./ConfettiBurst";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { GoogleAuthModal } from "./GoogleAuthModal";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [streakConfetti, setStreakConfetti] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { isAuthenticated, user } = useAuthStore();
 
   const navItems = [
+    { label: "Landing", href: "/landing", icon: Globe },
     { label: "Home", href: "/", icon: Home },
     { label: "Train", href: "/workout", icon: Dumbbell },
     { label: "Recover", href: "/recovery", icon: Zap },
@@ -42,6 +49,7 @@ export default function Navigation() {
   ];
 
   const quickCommands = [
+    { category: "Landing Page", name: "FitX AI Platform Landing & Overview", href: "/landing", icon: Globe },
     { category: "Home Hub", name: "Home Mission & Companion Greetings", href: "/", icon: Home },
     { category: "Workout", name: "Active Workout HUD & Overload Engine", href: "/workout", icon: Dumbbell },
     { category: "Recovery", name: "HPE HRV Ring & 4-7-8 Breathing Pacer", href: "/recovery", icon: Zap },
@@ -90,6 +98,7 @@ export default function Navigation() {
   return (
     <>
       <ConfettiBurst trigger={streakConfetti} onComplete={() => setStreakConfetti(false)} />
+      <GoogleAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
       {/* Global Quick Command Palette Drawer (Cmd/Ctrl + K) */}
       {cmdOpen && (
@@ -100,7 +109,7 @@ export default function Navigation() {
                 <Search className="w-5 h-5 shrink-0 text-emerald-600" />
                 <input
                   type="text"
-                  placeholder="Ask Flexy or search any feature (e.g. Meals, HRV, Workouts)..."
+                  placeholder="Ask Flexy or search any feature (e.g. Landing, Meals, HRV, Workouts)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   autoFocus
@@ -161,6 +170,26 @@ export default function Navigation() {
         </div>
 
         <div className="flex items-center space-x-1.5 shrink-0">
+          {/* Google Auth Trigger Button */}
+          <button
+            onClick={() => {
+              soundscape.playTapSound();
+              setAuthModalOpen(true);
+            }}
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all border border-slate-700 shadow-xs"
+            title="Google Authenticator 2FA Sign-In"
+          >
+            <svg className="w-3 h-3 bg-white rounded-full p-0.2 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
+              <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
+            </svg>
+            <span className="text-[10px] font-black tracking-tight text-emerald-400">
+              {isAuthenticated ? "Abhay" : "Google 2FA"}
+            </span>
+          </button>
+
           <button
             onClick={() => setCmdOpen(true)}
             className="p-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 transition-colors"
@@ -175,14 +204,14 @@ export default function Navigation() {
             title="12 Day Streak!"
           >
             <Flame className="w-3.5 h-3.5 fill-current animate-pulse text-amber-500" />
-            <span className="text-[11px] font-black">12 Days</span>
+            <span className="text-[11px] font-black">12d</span>
           </button>
         </div>
       </header>
 
       {/* Floating Crisp Glass Dock Bottom Navigation */}
       <nav 
-        className="fixed left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 min-h-[58px] py-1 px-1.5 flex justify-between items-center w-[calc(100%-1rem)] max-w-[400px] mx-auto rounded-full shadow-lg shadow-slate-900/10"
+        className="fixed left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 min-h-[58px] py-1 px-1.5 flex justify-between items-center w-[calc(100%-1rem)] max-w-[420px] mx-auto rounded-full shadow-lg shadow-slate-900/10"
         style={{ bottom: "calc(var(--safe-area-bottom, 0px) + 12px)" }}
       >
         {navItems.map((item) => {
@@ -214,3 +243,4 @@ export default function Navigation() {
     </>
   );
 }
+
