@@ -39,8 +39,7 @@ export default function Navigation() {
   const { isAuthenticated, user } = useAuthStore();
 
   const navItems = [
-    { label: "Landing", href: "/landing", icon: Globe },
-    { label: "Home", href: "/", icon: Home },
+    { label: "Home", href: "/dashboard", icon: Home },
     { label: "Train", href: "/workout", icon: Dumbbell },
     { label: "Recover", href: "/recovery", icon: Zap },
     { label: "Meals", href: "/meal-planner", icon: Utensils },
