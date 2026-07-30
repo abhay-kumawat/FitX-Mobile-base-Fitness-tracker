@@ -128,6 +128,10 @@ class WorkoutPlan(Base):
     name = Column(String, nullable=False)
     goal = Column(String, nullable=False)
     status = Column(String, default="active") # active, archived
+    is_recurring = Column(Boolean, default=False)
+    recurrence_rule = Column(String, nullable=True) # e.g. "FREQ=WEEKLY;BYDAY=MO,WE,FR"
+    planned_date = Column(String(10), nullable=True, index=True) # YYYY-MM-DD
+    template_origin_id = Column(Integer, ForeignKey("workout_plans.id"), nullable=True)
     workout_data = Column(JSON, nullable=False) # Structured plan JSON
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -155,6 +159,7 @@ class WorkoutSession(Base):
     temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True) # TES linkage
     name = Column(String, nullable=False)
     status = Column(String, default="in_progress") # in_progress, completed, discarded
+    planned_date = Column(String(10), nullable=True, index=True) # YYYY-MM-DD
     start_time = Column(DateTime, default=datetime.utcnow)
     end_time = Column(DateTime, nullable=True)
     duration_seconds = Column(Integer, default=0)
@@ -312,6 +317,8 @@ class AIWorkoutRecommendation(Base):
     suggestion_data = Column(JSON, default=dict) # e.g. {"action": "reduce_weight", "exercise": "Bench Press", "value": -5.0}
     is_applied = Column(Boolean, default=False)
     is_dismissed = Column(Boolean, default=False)
+    confidence_score = Column(Float, default=0.9)
+    evidence_sources = Column(JSON, default=list) # Array of strings justifying the recommendation
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Habit(Base):
@@ -786,3 +793,122 @@ class UserInjuryProfile(Base):
     pain_level = Column(Integer, default=5) # 1-10
     reported_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, default="")
+
+class BodyMeasurementLog(Base):
+    __tablename__ = "body_measurement_logs"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    weight_kg = Column(Float, nullable=True)
+    body_fat_pct = Column(Float, nullable=True)
+    lean_mass_kg = Column(Float, nullable=True)
+    waist_cm = Column(Float, nullable=True)
+    chest_cm = Column(Float, nullable=True)
+    shoulders_cm = Column(Float, nullable=True)
+    arms_cm = Column(Float, nullable=True)
+    forearms_cm = Column(Float, nullable=True)
+    neck_cm = Column(Float, nullable=True)
+    thighs_cm = Column(Float, nullable=True)
+    calves_cm = Column(Float, nullable=True)
+    hips_cm = Column(Float, nullable=True)
+    bmi = Column(Float, nullable=True)
+    estimated_muscle_mass_kg = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class PsychologicalLog(Base):
+    __tablename__ = "psychological_logs"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    motivation = Column(Float, nullable=True) # 1-10
+    confidence = Column(Float, nullable=True) # 1-10
+    stress = Column(Float, nullable=True) # 1-10
+    mood = Column(Float, nullable=True) # 1-10
+    energy = Column(Float, nullable=True) # 1-10
+    workout_enjoyment = Column(Float, nullable=True) # 1-10
+    perceived_recovery = Column(Float, nullable=True) # 1-10
+    exercise_difficulty = Column(Float, nullable=True) # 1-10
+    training_anxiety = Column(Float, nullable=True) # 1-10
+    burnout_risk = Column(Float, nullable=True) # 1-10
+    consistency_mindset = Column(Float, nullable=True) # 1-10
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class CustomExercise(Base):
+    __tablename__ = "custom_exercises"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String, index=True, nullable=False)
+    category = Column(String, nullable=False)
+    primary_muscle = Column(String, nullable=False)
+    equipment = Column(String, nullable=False)
+    instructions = Column(Text, default="")
+    default_sets = Column(Integer, default=3)
+    default_reps = Column(String, default="8-12")
+    default_rest_sec = Column(Integer, default=90)
+    difficulty = Column(String, default="intermediate")
+    visibility = Column(String, default="private")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class WorkoutEvent(Base):
+    __tablename__ = "workout_events"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    plan_id = Column(Integer, ForeignKey("workout_plans.id"), nullable=False)
+    planned_date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    status = Column(String, default="scheduled") # scheduled, completed, skipped
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AIConversation(Base):
+    __tablename__ = "ai_conversations"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey("workout_sessions.id"), nullable=True)
+    context_tags = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class AIMessage(Base):
+    __tablename__ = "ai_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id"), nullable=False, index=True)
+    sender = Column(String, nullable=False) # user, coach
+    text = Column(Text, nullable=False)
+    suggested_actions = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AIActionLog(Base):
+    __tablename__ = "ai_action_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    status = Column(String, default="pending") # pending, approved, rejected, applied
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AIRecommendation(Base):
+    __tablename__ = "ai_recommendations"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    plan_id = Column(Integer, ForeignKey("workout_plans.id"), nullable=True)
+    reasoning = Column(Text, nullable=False)
+    proposed_changes = Column(JSON, nullable=False)
+    confidence = Column(Float, nullable=False)
+    status = Column(String, default="pending") # pending, applied, ignored
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ExerciseSearchHistory(Base):
+    __tablename__ = "exercise_search_history"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    query = Column(String, nullable=False)
+    searched_at = Column(DateTime, default=datetime.utcnow)
+
+class FavoriteExercise(Base):
+    __tablename__ = "favorite_exercises"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    exercise_name = Column(String, nullable=False) # Linking by name or ID
+    added_at = Column(DateTime, default=datetime.utcnow)

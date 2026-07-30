@@ -66,6 +66,48 @@ def migrate():
             created_at DATETIME,
             FOREIGN KEY(user_id) REFERENCES users(id),
             FOREIGN KEY(session_id) REFERENCES workout_sessions(id)
+        );""",
+        "ALTER TABLE ai_workout_recommendations ADD COLUMN confidence_score FLOAT DEFAULT 0.9;",
+        "ALTER TABLE ai_workout_recommendations ADD COLUMN evidence_sources JSON DEFAULT '[]';",
+        """CREATE TABLE IF NOT EXISTS body_measurement_logs (
+            id VARCHAR(64) PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            date VARCHAR(10) NOT NULL,
+            weight_kg FLOAT,
+            body_fat_pct FLOAT,
+            lean_mass_kg FLOAT,
+            waist_cm FLOAT,
+            chest_cm FLOAT,
+            shoulders_cm FLOAT,
+            arms_cm FLOAT,
+            forearms_cm FLOAT,
+            neck_cm FLOAT,
+            thighs_cm FLOAT,
+            calves_cm FLOAT,
+            hips_cm FLOAT,
+            bmi FLOAT,
+            estimated_muscle_mass_kg FLOAT,
+            created_at DATETIME,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );""",
+        """CREATE TABLE IF NOT EXISTS psychological_logs (
+            id VARCHAR(64) PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            date VARCHAR(10) NOT NULL,
+            motivation FLOAT,
+            confidence FLOAT,
+            stress FLOAT,
+            mood FLOAT,
+            energy FLOAT,
+            workout_enjoyment FLOAT,
+            perceived_recovery FLOAT,
+            exercise_difficulty FLOAT,
+            training_anxiety FLOAT,
+            burnout_risk FLOAT,
+            consistency_mindset FLOAT,
+            notes TEXT DEFAULT '',
+            created_at DATETIME,
+            FOREIGN KEY(user_id) REFERENCES users(id)
         );"""
     ]
     

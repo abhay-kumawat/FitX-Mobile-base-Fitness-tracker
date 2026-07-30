@@ -82,6 +82,8 @@ from backend.routes.kie import router as kie_router
 from backend.routes.pice import router as pice_router
 from backend.routes.temporal_events import router as temporal_events_router
 from backend.routes.meals import router as meals_router
+from backend.routes.growth import router as growth_router
+from backend.routes.analytics_pipeline_router import router as analytics_pipeline_router
 
 router = APIRouter()
 router.include_router(auth_router)
@@ -94,6 +96,8 @@ router.include_router(kie_router)
 router.include_router(pice_router)
 router.include_router(temporal_events_router)
 router.include_router(meals_router)
+router.include_router(growth_router)
+router.include_router(analytics_pipeline_router)
 
 
 

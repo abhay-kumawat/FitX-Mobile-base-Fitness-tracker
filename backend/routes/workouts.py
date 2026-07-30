@@ -211,3 +211,124 @@ def get_ai_recommendations(
     if context_type:
         q = q.filter(AIWorkoutRecommendation.context_type == context_type)
     return q.order_by(AIWorkoutRecommendation.created_at.desc()).limit(10).all()
+
+from backend.models.models import WorkoutPlan, WorkoutEvent, CustomExercise, FavoriteExercise
+from backend.schemas.schemas import (
+    WorkoutPlanCreate, WorkoutPlanOut, WorkoutEventCreate, WorkoutEventOut,
+    CustomExerciseCreate, CustomExerciseOut
+)
+
+@router.post("/plans", response_model=WorkoutPlanOut)
+def create_plan(
+    inp: WorkoutPlanCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    plan = WorkoutPlan(
+        user_id=current_user.id,
+        name=inp.name,
+        goal=inp.goal,
+        is_recurring=inp.is_recurring,
+        recurrence_rule=inp.recurrence_rule,
+        planned_date=inp.planned_date,
+        workout_data=inp.workout_data
+    )
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+@router.get("/plans", response_model=List[WorkoutPlanOut])
+def get_plans(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(WorkoutPlan).filter(WorkoutPlan.user_id == current_user.id).all()
+
+@router.put("/plans/{plan_id}", response_model=WorkoutPlanOut)
+def update_plan(
+    plan_id: int,
+    inp: WorkoutPlanCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from fastapi import HTTPException
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id, WorkoutPlan.user_id == current_user.id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    plan.name = inp.name
+    plan.goal = inp.goal
+    plan.is_recurring = inp.is_recurring
+    plan.recurrence_rule = inp.recurrence_rule
+    plan.planned_date = inp.planned_date
+    plan.workout_data = inp.workout_data
+    
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+@router.post("/events", response_model=WorkoutEventOut)
+def create_event(
+    inp: WorkoutEventCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    event = WorkoutEvent(
+        user_id=current_user.id,
+        plan_id=inp.plan_id,
+        planned_date=inp.planned_date
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+@router.get("/events", response_model=List[WorkoutEventOut])
+def get_events(
+    start_date: str,
+    end_date: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(WorkoutEvent).filter(
+        WorkoutEvent.user_id == current_user.id,
+        WorkoutEvent.planned_date >= start_date,
+        WorkoutEvent.planned_date <= end_date
+    ).all()
+
+@router.post("/custom-exercises", response_model=CustomExerciseOut)
+def create_custom_exercise(
+    inp: CustomExerciseCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    exercise = CustomExercise(
+        user_id=current_user.id,
+        **inp.model_dump()
+    )
+    db.add(exercise)
+    db.commit()
+    db.refresh(exercise)
+    return exercise
+
+@router.get("/custom-exercises", response_model=List[CustomExerciseOut])
+def get_custom_exercises(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(CustomExercise).filter(CustomExercise.user_id == current_user.id).all()
+
+from pydantic import BaseModel
+class CoachChatRequest(BaseModel):
+    message: str
+
+@router.post("/intelligence/agent-chat")
+def agent_chat(
+    inp: CoachChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from backend.services.workout_intelligence.ai_coach import process_coach_chat
+    return process_coach_chat(db, current_user.id, inp.message)
+

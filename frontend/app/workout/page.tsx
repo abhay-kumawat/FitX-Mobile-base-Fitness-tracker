@@ -9,7 +9,8 @@ import { DetailedSetLogger } from "@/components/workout/DetailedSetLogger";
 import { RestTimerEngine } from "@/components/workout/RestTimerEngine";
 import { WorkoutPlanner } from "@/components/workout/WorkoutPlanner";
 import { EditableWorkoutBuilder } from "@/components/workout/EditableWorkoutBuilder";
-import { PersistentAICoach } from "@/components/workout/PersistentAICoach";
+import { ExercisePickerModal } from "@/components/workout/ExercisePickerModal";
+import { DraggableFloatingAI } from "@/components/coach_chat/DraggableFloatingAI";
 import { WarmupPyramidModal } from "@/components/workout/WarmupPyramidModal";
 import { PlateLoadingVisualizerModal } from "@/components/workout/PlateLoadingVisualizerModal";
 import { SmartRestRecoveryOverlay } from "@/components/workout/SmartRestRecoveryOverlay";
@@ -22,6 +23,7 @@ export default function WorkoutHUDPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"planner" | "active">("active");
   const [showTips, setShowTips] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -79,7 +81,7 @@ export default function WorkoutHUDPage() {
 
       {activeTab === "planner" && (
         <div className="flex flex-col gap-6">
-          <WorkoutPlanner />
+          <WorkoutPlanner onAddExercise={() => setIsPickerOpen(true)} />
           <EditableWorkoutBuilder />
         </div>
       )}
@@ -188,9 +190,17 @@ export default function WorkoutHUDPage() {
       )}
 
       {/* Persistent AI Coach */}
-      <PersistentAICoach />
+      <DraggableFloatingAI />
 
       {/* Modals & Overlays */}
+      <ExercisePickerModal 
+        isOpen={isPickerOpen} 
+        onClose={() => setIsPickerOpen(false)}
+        onSelect={(ex) => {
+          console.log("Selected:", ex);
+          setIsPickerOpen(false);
+        }}
+      />
       <WarmupPyramidModal />
       <PlateLoadingVisualizerModal />
       <SmartRestRecoveryOverlay />

@@ -395,6 +395,62 @@ class PersonalRecordOut(BaseModel):
     class Config:
         from_attributes = True
 
+
+# Phase 2 Planner Schemas
+class WorkoutPlanBase(BaseModel):
+    name: str
+    goal: str
+    is_recurring: bool = False
+    recurrence_rule: Optional[str] = None
+    planned_date: Optional[str] = None
+    workout_data: Dict[str, Any]
+
+class WorkoutPlanCreate(WorkoutPlanBase):
+    pass
+
+class WorkoutPlanOut(WorkoutPlanBase):
+    id: int
+    user_id: int
+    version: int
+    status: str
+    template_origin_id: Optional[int] = None
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class WorkoutEventCreate(BaseModel):
+    plan_id: int
+    planned_date: str
+
+class WorkoutEventOut(BaseModel):
+    id: int
+    user_id: int
+    plan_id: int
+    planned_date: str
+    status: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class CustomExerciseCreate(BaseModel):
+    name: str
+    category: str
+    primary_muscle: str
+    equipment: str
+    instructions: str = ""
+    default_sets: int = 3
+    default_reps: str = "8-12"
+    default_rest_sec: int = 90
+    difficulty: str = "intermediate"
+    visibility: str = "private"
+
+class CustomExerciseOut(CustomExerciseCreate):
+    id: int
+    user_id: int
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
 class AnalyticsDashboardOut(BaseModel):
     total_workouts_completed: int
     total_volume_kg: float

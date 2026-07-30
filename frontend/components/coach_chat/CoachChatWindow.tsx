@@ -36,8 +36,7 @@ export default function CoachChatWindow() {
     setMessages((prev) => [...prev, { sender: "user", text: userText }]);
     setInputMsg("");
     setIsTyping(true);
-
-    const reply = await fitxAPI.sendCoachChat(userText);
+    const reply = await fitxAPI.agentChat(userText);
     setIsTyping(false);
 
     if (reply && reply.reply) {

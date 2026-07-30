@@ -44,4 +44,22 @@ export const fitxAPI = {
       method: "POST",
       body: JSON.stringify({ available_minutes: mins }),
     }),
+  getEvents: (startDate: string, endDate: string) =>
+    fetchFromAPI(`/workout/events?start_date=${startDate}&end_date=${endDate}`),
+  getPlans: () => fetchFromAPI("/workout/plans"),
+  createPlan: (plan: any) => fetchFromAPI("/workout/plans", { method: "POST", body: JSON.stringify(plan) }),
+  updatePlan: (id: number, plan: any) => fetchFromAPI(`/workout/plans/${id}`, { method: "PUT", body: JSON.stringify(plan) }),
+  getExercises: (query: string, muscle: string, equipment: string, difficulty: string | null) => {
+    let url = `/workout/exercises/search?`;
+    if (query) url += `query=${query}&`;
+    if (muscle) url += `muscle=${muscle}&`;
+    if (equipment) url += `equipment=${equipment}&`;
+    if (difficulty) url += `difficulty=${difficulty}`;
+    return fetchFromAPI(url);
+  },
+  agentChat: (msg: string) =>
+    fetchFromAPI("/workout/intelligence/agent-chat", {
+      method: "POST",
+      body: JSON.stringify({ message: msg }),
+    }),
 };
