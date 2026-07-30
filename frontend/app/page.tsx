@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { GoogleAuthModal } from "@/components/GoogleAuthModal";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -10,423 +10,389 @@ import {
   Flame, 
   Dumbbell, 
   Zap, 
-  Utensils, 
-  Trophy, 
-  BookOpen, 
-  Sparkles, 
-  Cpu, 
-  Activity, 
-  ShieldCheck, 
-  KeyRound, 
+  Target,
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
   ArrowRight, 
   CheckCircle2, 
-  Star, 
-  Layers, 
-  Lock, 
+  User, 
   Check, 
-  ChevronRight,
-  UserPlus,
-  LogIn,
-  LogOut,
+  Sparkles,
   LayoutDashboard
 } from "lucide-react";
 
 export default function WebsiteLandingPage() {
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const { isAuthenticated, user, logout, loginWithEmail } = useAuthStore();
-  const [signupName, setSignupName] = useState("Abhay Kumawat");
-  const [signupEmail, setSignupEmail] = useState("abhaykumawat@gmail.com");
-  const [signupGoal, setSignupGoal] = useState("Build Muscle");
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  const { isAuthenticated, user, logout, loginWithEmail, loginWithGoogle } = useAuthStore();
 
-  const handleOpenAuth = () => {
+  // Form State
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("abhaykumawat@gmail.com");
+  const [name, setName] = useState("Abhay Kumawat");
+  const [password, setPassword] = useState("••••••••");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const handleOpenAuthModal = () => {
     soundscape.playTapSound();
     setAuthModalOpen(true);
   };
 
-  const handleLogout = () => {
-    soundscape.playTapSound();
-    logout();
-  };
-
-  const handleEnterApp = () => {
-    soundscape.playTapSound();
-    router.push("/dashboard");
-  };
-
-  const handleInlineSignup = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    soundscape.playVictoryFanfare();
-    loginWithEmail(signupEmail, signupName);
-    setSignupSuccess(true);
+    soundscape.playTapSound();
+    setIsSubmitting(true);
+    setStatusMessage("");
+
     setTimeout(() => {
-      router.push("/dashboard");
-    }, 900);
+      setIsSubmitting(false);
+      loginWithEmail(email, mode === "signup" ? name : undefined);
+      soundscape.playVictoryFanfare();
+      setStatusMessage(mode === "signup" ? "Account Created! Redirecting..." : "Welcome Back! Redirecting...");
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 800);
+    }, 600);
   };
 
-  const featureHubs = [
-    {
-      title: "Adaptive Overload Engine",
-      desc: "Dynamically auto-adjusts sets, reps, load, and rest based on real-time HRV recovery & RPE telemetry.",
-      icon: Dumbbell,
-      badge: "Microservice 01",
-      color: "from-emerald-500/20 to-teal-500/10 text-emerald-600 border-emerald-200",
-      href: "/workout"
-    },
-    {
-      title: "HPE Recovery Sanctuary",
-      desc: "Real-time telemetry-based HRV readiness ring (0–100) with interactive body fatigue heatmaps.",
-      icon: Zap,
-      badge: "Microservice 02",
-      color: "from-sky-500/20 to-cyan-500/10 text-sky-600 border-sky-200",
-      href: "/recovery"
-    },
-    {
-      title: "Budget-Aware Meal Planner",
-      desc: "Generates cost-optimized meal plans ($/day) with weekly grocery lists & scientific macro balancing.",
-      icon: Utensils,
-      badge: "Microservice 03",
-      color: "from-amber-500/20 to-orange-500/10 text-amber-600 border-amber-200",
-      href: "/meal-planner"
-    },
-    {
-      title: "Skill Tree & Wardrobe",
-      desc: "Interactive visual skill graph tracing movement progressions from beginner to elite levitation.",
-      icon: Trophy,
-      badge: "Gamification Engine",
-      color: "from-purple-500/20 to-pink-500/10 text-purple-600 border-purple-200",
-      href: "/skill-tree"
-    },
-    {
-      title: "AI Exercise Constellation",
-      desc: "Taxonomy & biomechanical injury safety checking for over 500+ exercise movements.",
-      icon: BookOpen,
-      badge: "Microservice 05",
-      color: "from-emerald-500/20 to-lime-500/10 text-emerald-600 border-emerald-200",
-      href: "/exercises"
-    },
-    {
-      title: "Gemini AI Coach Chat",
-      desc: "RAG-backed fitness knowledge graph with inline suggested action triggers.",
-      icon: Sparkles,
-      badge: "Google Gemini v1.5",
-      color: "from-indigo-500/20 to-violet-500/10 text-indigo-600 border-indigo-200",
-      href: "/coach"
-    },
-    {
-      title: "13-Layer Digital Twin Avatar",
-      desc: "Simulate future muscular growth, fat loss trajectory, and metabolic scenarios in 3D.",
-      icon: Cpu,
-      badge: "Digital Twin Engine",
-      color: "from-cyan-500/20 to-blue-500/10 text-cyan-600 border-cyan-200",
-      href: "/profile"
-    },
-    {
-      title: "Wearables Telemetry Sync",
-      desc: "Bi-directional integration with Apple Watch, Oura Ring, Garmin & WHOOP sensors.",
-      icon: Activity,
-      badge: "Telemetry Engine",
-      color: "from-rose-500/20 to-red-500/10 text-rose-600 border-rose-200",
-      href: "/wearables"
-    },
-  ];
+  const handleStartMission = () => {
+    soundscape.playTapSound();
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+    } else {
+      router.push("/workout");
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
+    <div className="min-h-screen bg-[#F9FAF8] text-slate-900 font-sans p-3 sm:p-6 flex flex-col justify-between max-w-6xl mx-auto space-y-8 animate-smooth-reveal">
       <GoogleAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
-      {/* Main Website Hero Section */}
-      <section className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl space-y-6">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
+      {/* Main Grid: Left Showcase & Right Auth Card */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
+        
+        {/* LEFT COLUMN: Hero Showcase & Mission Card */}
+        <div className="md:col-span-6 lg:col-span-7 space-y-6 flex flex-col justify-between h-full">
+          {/* Logo Header & Quick Badges */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1">
+                <span className="text-2xl font-black text-slate-900 tracking-tight">Fit</span>
+                <span className="text-2xl font-black text-emerald-500 tracking-tight">x</span>
+              </div>
+              
+              {isAuthenticated && user && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-slate-600">Hi, {user.name}</span>
+                  <button
+                    onClick={() => {
+                      soundscape.playTapSound();
+                      logout();
+                    }}
+                    className="text-[11px] font-extrabold text-rose-600 px-2.5 py-1 rounded-xl bg-rose-50 border border-rose-200"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
 
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-wide">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>FitX AI Platform 2.0 • Google Authenticator Integrated</span>
-        </div>
+            {/* Headline */}
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-950 leading-tight">
+                Stronger Today, <br />
+                <span className="text-emerald-500">Better Tomorrow.</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-md">
+                Track your workouts, follow plans and achieve your fitness goals.
+              </p>
+            </div>
 
-        <div className="space-y-3">
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-            Hyper-Personalized <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-              AI Fitness & Recovery Engine
-            </span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-xl">
-            18 microservices working together for adaptive workouts, real-time HRV telemetry, budget-aware meal plans, and Google Authenticator 2FA protection.
-          </p>
-        </div>
+            {/* Target & Streak Badges */}
+            <div className="flex items-center space-x-2 pt-1">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
+                <Target className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Today's Primary Target</span>
+              </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-          <button
-            onClick={handleOpenAuth}
-            className="py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2 transition-all active:scale-98"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Sign Up / Sign In with Google</span>
-          </button>
-
-          <button
-            onClick={handleEnterApp}
-            className="py-3 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs border border-slate-700 flex items-center justify-center space-x-2 transition-all active:scale-98"
-          >
-            <LayoutDashboard className="w-4 h-4 text-emerald-400" />
-            <span>Launch App Dashboard</span>
-          </button>
-        </div>
-
-        {/* Live Telemetry Stats */}
-        <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800/80 text-center">
-          <div className="p-2 rounded-xl bg-slate-800/50 border border-slate-800">
-            <span className="text-lg sm:text-xl font-black text-emerald-400">98.4%</span>
-            <span className="block text-[10px] text-slate-400 font-bold uppercase mt-0.5">Recovery Accuracy</span>
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
+                <span>12 Day Streak</span>
+              </div>
+            </div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-800/50 border border-slate-800">
-            <span className="text-lg sm:text-xl font-black text-cyan-400">18 Services</span>
-            <span className="block text-[10px] text-slate-400 font-bold uppercase mt-0.5">Microservices</span>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-800/50 border border-slate-800">
-            <span className="text-lg sm:text-xl font-black text-amber-400">45k+</span>
-            <span className="block text-[10px] text-slate-400 font-bold uppercase mt-0.5">AI Plans Generated</span>
-      {/* Dedicated Create Account Section */}
-      <section id="create-account" className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-            <UserPlus className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              Create Your Free Account
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase">
-                Google 2FA
-              </span>
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Start your 14-day Pro AI trial with Google Authenticator security.
-            </p>
-          </div>
-        </div>
 
-        {/* Quick Google 1-Click Button */}
-        <button
-          type="button"
-          onClick={handleOpenAuth}
-          className="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center justify-center space-x-2 transition-all active:scale-98"
-        >
-          <svg className="w-4 h-4 bg-white rounded-full p-0.5 shrink-0" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
-            <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
-          </svg>
-          <span>Sign Up with Google 1-Click</span>
-        </button>
-
-        <div className="relative flex items-center justify-center my-2">
-          <div className="border-t border-slate-200 w-full" />
-          <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase">
-            or sign up with email
-          </span>
-        </div>
-
-        {signupSuccess ? (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-            <h4 className="text-sm font-black text-slate-900">Account Created Successfully!</h4>
-            <p className="text-xs text-slate-600 font-semibold">Redirecting to your App Dashboard...</p>
-          </div>
-        ) : (
-          <form onSubmit={handleInlineSignup} className="space-y-3">
-            <div>
-              <label className="text-[11px] font-bold text-slate-600 block mb-1">Full Name</label>
-              <input
-                type="text"
-                required
-                value={signupName}
-                onChange={(e) => setSignupName(e.target.value)}
-                placeholder="Abhay Kumawat"
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+          {/* Athlete Hero Graphic & Overlay Mission Card */}
+          <div className="relative rounded-3xl overflow-hidden border border-slate-200/80 bg-slate-900 shadow-xl min-h-[380px] flex flex-col justify-end p-4 sm:p-5 group">
+            {/* Athlete Background Image */}
+            <div className="absolute inset-0 z-0">
+              <img
+                src="/hero_athlete.png"
+                alt="Fitness Athlete"
+                className="w-full h-full object-cover object-center opacity-85 group-hover:scale-105 transition-transform duration-700"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-600 block mb-1">Email Address</label>
-              <input
-                type="email"
-                required
-                value={signupEmail}
-                onChange={(e) => setSignupEmail(e.target.value)}
-                placeholder="abhaykumawat@gmail.com"
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+            {/* Floating Mission Overlay Box */}
+            <div className="relative z-10 p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl space-y-3">
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-slate-950">
+                  Upper Body Hypertrophy Phase 2
+                </h3>
+                <p className="text-[11px] text-slate-600 font-medium leading-snug mt-0.5">
+                  Focus: Incline Barbell Bench, Chest Dips & Cable Lateral Raises (45 min)
+                </p>
+              </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-600 block mb-1">Primary Fitness Goal</label>
-              <select
-                value={signupGoal}
-                onChange={(e) => setSignupGoal(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
-              >
-                <option value="Build Muscle">Build Muscle & Strength</option>
-                <option value="Burn Fat">Fat Loss & Conditioning</option>
-                <option value="Build Habit">Habit & Daily Mobility</option>
-                <option value="Athletic Power">Athletic Performance</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-all active:scale-98"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Create Free Account & Launch App</span>
-            </button>
-          </form>
-        )}
-      </section>
-
-      {/* 8 Microservices Grid */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-emerald-600" /> Platform Microservices
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">8 integrated fitness & nutrition engines</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {featureHubs.map((hub, idx) => {
-            const IconComponent = hub.icon;
-            return (
-              <Link
-                key={idx}
-                href={hub.href}
-                className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/50 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br border flex items-center justify-center ${hub.color}`}>
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase border border-slate-200">
-                    {hub.badge}
-                  </span>
+              {/* 3 Metric Stat Pills */}
+              <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200/80">
+                  <span className="text-[9px] font-black text-slate-400 uppercase block">EST. VOLUME</span>
+                  <span className="text-xs font-black text-emerald-600 mt-0.5 block">4,250 kg</span>
                 </div>
 
+                <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200/80">
+                  <span className="text-[9px] font-black text-slate-400 uppercase block">TARGET XP</span>
+                  <span className="text-xs font-black text-amber-600 mt-0.5 block">+450 XP</span>
+                </div>
+
+                <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200/80">
+                  <span className="text-[9px] font-black text-slate-400 uppercase block">REST WINDOW</span>
+                  <span className="text-xs font-black text-sky-600 mt-0.5 block">90s / set</span>
+                </div>
+              </div>
+
+              {/* Start Mission Button */}
+              <button
+                type="button"
+                onClick={handleStartMission}
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-all"
+              >
+                <Dumbbell className="w-4 h-4" />
+                <span>START MISSION</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Modern Clean Authentication Card */}
+        <div className="md:col-span-6 lg:col-span-5">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-6">
+            
+            {/* Header */}
+            <div className="text-center space-y-1">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+                {mode === "signin" ? "Welcome Back! 👋" : "Create Account 👋"}
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                {mode === "signin"
+                  ? "Sign in to continue your fitness journey"
+                  : "Join 45,000+ athletes leveling up their performance"}
+              </p>
+            </div>
+
+            {/* Email / Password Form */}
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              {mode === "signup" && (
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-600 transition-colors flex items-center justify-between">
-                    <span>{hub.title}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                    {hub.desc}
-                  </p>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-emerald-600 absolute left-3.5 top-3.5" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                    />
+                  </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+              )}
 
-      {/* Pricing / Plan Grid */}
-      <section className="p-5 sm:p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 space-y-6 shadow-xl min-w-0">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-black uppercase text-emerald-400 tracking-wider">Flexible Plans</span>
-          <h2 className="text-xl font-black text-white">Choose Your AI Fitness Tier</h2>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Includes full Google Authentication and access to all 18 backend microservices.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-4 w-full">
-          {/* Free Tier */}
-          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4 min-w-0">
-            <div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-wide">Starter</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-white">$0</span>
-                <span className="text-xs text-slate-400 font-bold">/ forever</span>
+              <div>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-emerald-600 absolute left-3.5 top-3.5" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
-              <ul className="space-y-2 mt-4 text-xs text-slate-300 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Basic Workout Tracking</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Standard Meal Planner</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Google Single Sign-On</span></li>
-              </ul>
-            </div>
-            <button
-              onClick={handleOpenAuth}
-              className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all active:scale-98"
-            >
-              Sign Up Free
-            </button>
-          </div>
 
-          {/* Pro Tier (Popular) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/80 to-slate-900 border-2 border-emerald-500 relative flex flex-col justify-between space-y-4 shadow-lg shadow-emerald-500/10 min-w-0">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow-sm whitespace-nowrap">
-              Most Popular
-            </span>
-            <div className="pt-1">
-              <span className="text-xs font-black text-emerald-400 uppercase tracking-wide">Pro AI Coach</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-white">$9.99</span>
-                <span className="text-xs text-slate-400 font-bold">/ month</span>
+              <div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-emerald-600 absolute left-3.5 top-3.5" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <ul className="space-y-2 mt-4 text-xs text-slate-200 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Adaptive Overload Engine</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">180px HRV Ring & Telemetry</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Gemini AI Coach Chat</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Google Authenticator 2FA</span></li>
-              </ul>
-            </div>
-            <button
-              onClick={handleOpenAuth}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all active:scale-98"
-            >
-              Sign Up with Google
-            </button>
-          </div>
 
-          {/* Enterprise Tier */}
-          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col justify-between space-y-4 min-w-0">
-            <div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-wide">Studio</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-white">$29.99</span>
-                <span className="text-xs text-slate-400 font-bold">/ month</span>
+              {/* Remember Me & Forgot Password Row */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="flex items-center space-x-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-500"
+                  />
+                  <span className="font-semibold text-slate-600">Remember Me</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundscape.playTapSound();
+                    setStatusMessage("Password reset link sent to your email!");
+                  }}
+                  className="font-bold text-emerald-600 hover:text-emerald-700"
+                >
+                  Forgot Password?
+                </button>
               </div>
-              <ul className="space-y-2 mt-4 text-xs text-slate-300 font-medium">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Multi-Client Dashboard</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Custom Biomechanical Rules</span></li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="break-words">Priority API Access</span></li>
-              </ul>
+
+              {/* Status Toast Message */}
+              {statusMessage && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-extrabold flex items-center justify-center gap-1.5 animate-smooth-reveal">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{statusMessage}</span>
+                </div>
+              )}
+
+              {/* Primary Green Sign In / Sign Up Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-all"
+              >
+                <span>{mode === "signin" ? "Sign In" : "Sign Up"}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+
+            {/* OR Divider */}
+            <div className="relative flex items-center justify-center my-3">
+              <div className="border-t border-slate-200 w-full" />
+              <span className="bg-white px-3 text-[10px] font-extrabold text-slate-400 uppercase">
+                OR
+              </span>
             </div>
-            <button
-              onClick={handleOpenAuth}
-              className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs transition-all active:scale-98"
-            >
-              Contact Sales
-            </button>
+
+            {/* Social Authentication Buttons */}
+            <div className="space-y-2.5">
+              {/* Continue with Google (triggers Google 2FA Modal) */}
+              <button
+                type="button"
+                onClick={handleOpenAuthModal}
+                className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs shadow-xs flex items-center justify-center space-x-2.5 transition-all active:scale-98"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
+                  <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+
+              {/* Continue with Apple */}
+              <button
+                type="button"
+                onClick={() => {
+                  soundscape.playTapSound();
+                  setStatusMessage("Connecting to Apple Single Sign-On...");
+                  setTimeout(() => {
+                    loginWithEmail("abhaykumawat@icloud.com", "Abhay Kumawat");
+                    router.push("/dashboard");
+                  }, 800);
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs shadow-xs flex items-center justify-center space-x-2.5 transition-all active:scale-98"
+              >
+                <svg className="w-4 h-4 shrink-0 fill-current text-slate-900" viewBox="0 0 170 170">
+                  <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-5.02.12-9.88-1.99-14.59-6.35-3.17-2.75-7.07-7.46-11.68-14.13-7.53-10.74-13.43-22.95-17.71-36.63-4.28-13.68-6.42-26.65-6.42-38.9 0-14.71 3.59-27.1 10.77-37.16 7.18-10.07 16.48-15.19 27.9-15.36 4.9.06 10.05 1.25 15.46 3.58 5.4 2.33 9.38 3.54 11.95 3.63 2.12-.12 6.16-1.36 12.13-3.74 5.96-2.38 10.96-3.52 15.01-3.41 12.73.59 22.84 5.25 30.34 13.98-11.26 6.81-16.76 16.29-16.5 28.43.26 9.61 3.99 17.58 11.19 23.91 7.2 6.33 15.66 9.87 25.38 10.62-2.52 7.54-6.02 15.82-10.51 24.84zM119.22 31.8c0-7.39 2.72-14.47 8.16-21.23 5.44-6.76 12.28-10.57 20.52-11.43.26.94.39 1.88.39 2.82 0 7.33-2.73 14.5-8.19 21.52-5.46 7.02-12.39 10.87-20.79 11.55-.09-1.07-.13-2.15-.09-3.23z" />
+                </svg>
+                <span>Continue with Apple</span>
+              </button>
+            </div>
+
+            {/* Toggle Sign In / Sign Up Footer */}
+            <div className="text-center text-xs font-semibold text-slate-500 pt-2 border-t border-slate-100">
+              {mode === "signin" ? (
+                <>
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundscape.playTapSound();
+                      setMode("signup");
+                      setStatusMessage("");
+                    }}
+                    className="font-black text-emerald-600 hover:text-emerald-700 ml-1"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundscape.playTapSound();
+                      setMode("signin");
+                      setStatusMessage("");
+                    }}
+                    className="font-black text-emerald-600 hover:text-emerald-700 ml-1"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Terms & Privacy */}
+            <p className="text-[10px] text-center text-slate-400 font-medium leading-tight">
+              By continuing, you agree to our{" "}
+              <a href="#" className="underline hover:text-slate-600">Terms of Service</a> and{" "}
+              <a href="#" className="underline hover:text-slate-600">Privacy Policy</a>
+            </p>
+
           </div>
         </div>
-      </section>
+
+      </div>
 
       {/* Footer */}
-      <footer className="text-center space-y-3 pt-4 border-t border-slate-200">
-        <p className="text-xs font-extrabold text-slate-700">
-          FitX AI Platform © 2026 • Engineered by Abhay Kumawat
-        </p>
-        <div className="flex justify-center items-center space-x-4 text-[11px] font-bold text-slate-500">
-          <Link href="/" className="hover:text-emerald-600">Landing Page</Link>
-          <span>•</span>
-          <Link href="/dashboard" className="hover:text-emerald-600">App Dashboard</Link>
-          <span>•</span>
-          <Link href="/workout" className="hover:text-emerald-600">Workouts</Link>
-          <span>•</span>
-          <Link href="/recovery" className="hover:text-emerald-600">Recovery</Link>
+      <footer className="pt-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-semibold gap-2">
+        <div>
+          © 2026 <span className="font-black text-slate-900">Fit</span> <span className="font-black text-emerald-500">x</span>
+        </div>
+        <div>
+          Train Smart. Stay Consistent. <span className="text-emerald-600 font-bold">Get Results.</span>
         </div>
       </footer>
     </div>
