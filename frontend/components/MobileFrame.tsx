@@ -92,15 +92,15 @@ export default function MobileFrame({ children }: MobileFrameProps) {
 
         {/* Main Phone Device Viewport Box */}
         <div
-          className={`w-full transition-all duration-300 ${
+          className={`w-full flex flex-col transition-all duration-300 ${
             isFrameMode
-              ? `${widthClass} my-0 sm:my-2 rounded-[32px] sm:rounded-[48px] border-4 sm:border-[10px] border-slate-900 bg-[var(--bg-main)] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] relative min-h-screen sm:min-h-[850px] overflow-hidden [transform:translateZ(0)]`
-              : "max-w-md mx-auto min-h-screen bg-[var(--bg-main)] relative overflow-hidden [transform:translateZ(0)]"
+              ? `${widthClass} my-0 sm:my-2 rounded-[32px] sm:rounded-[48px] border-4 sm:border-[10px] border-slate-900 bg-[var(--bg-main)] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] relative h-[100dvh] sm:h-[850px] overflow-hidden [transform:translateZ(0)]`
+              : "max-w-md mx-auto h-[100dvh] bg-[var(--bg-main)] relative overflow-hidden [transform:translateZ(0)] flex flex-col"
           }`}
         >
           {/* iOS Dynamic Status Bar (Visible in Frame Mode) */}
           {isFrameMode && (
-            <div className="sticky top-0 z-50 bg-[var(--status-bar-bg)] backdrop-blur-xl px-4 pt-2.5 pb-2 flex items-center justify-between text-xs select-none border-b border-[var(--status-bar-border)] text-[var(--status-bar-text)] shrink-0">
+            <div className="z-50 bg-[var(--status-bar-bg)] backdrop-blur-xl px-4 pt-2.5 pb-2 flex items-center justify-between text-xs select-none border-b border-[var(--status-bar-border)] text-[var(--status-bar-text)] shrink-0">
               <span className="font-black font-mono text-[12px] tracking-tight">9:41</span>
 
               {/* Dynamic Island Notch */}
@@ -121,14 +121,16 @@ export default function MobileFrame({ children }: MobileFrameProps) {
             </div>
           )}
 
-          {/* Viewport Content Container */}
-          <div className="px-3.5 sm:px-4 pb-24 pt-0 relative z-10 min-h-full flex flex-col w-full max-w-full overflow-x-hidden">
-            {children}
+          {/* Viewport Content Container - Scrollable */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 w-full flex flex-col bg-[var(--bg-main)]">
+            <div className="px-3.5 sm:px-4 pb-24 flex flex-col w-full h-full">
+              {children}
+            </div>
           </div>
 
           {/* Bottom iOS Home Bar Indicator */}
           {isFrameMode && (
-            <div className="sticky bottom-0 z-50 pt-3 pb-2 flex justify-center pointer-events-none" style={{ background: "var(--home-bar-bg)" }}>
+            <div className="z-50 pt-3 pb-2 flex justify-center pointer-events-none shrink-0" style={{ background: "var(--home-bar-bg)" }}>
               <div className="w-32 h-1 rounded-full shadow-xs" style={{ backgroundColor: "var(--home-bar-pill)" }} />
             </div>
           )}

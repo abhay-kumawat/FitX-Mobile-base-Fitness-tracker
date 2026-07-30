@@ -1,140 +1,138 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Calendar as CalendarIcon, Filter, Clock, TrendingUp, AlertTriangle } from "lucide-react";
+import { Search, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { PillBadge } from "@/components/atomic/PillBadge";
-
-interface TimelineEvent {
-  id: string;
-  date: string;
-  time: string;
-  type: string;
-  title: string;
-  description: string;
-  icon: string;
-  details: any;
-}
+import { DynamicGraphEngine } from "./DynamicGraphEngine";
+import { InsightExplainer } from "./InsightExplainer";
+import { ReplayMyDay } from "./ReplayMyDay";
+import { Loader2 } from "lucide-react";
 
 export function GrowthLabTab() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeGraph, setActiveGraph] = useState<"consistency" | "recovery" | "volume">("consistency");
 
   useEffect(() => {
-    // Mocking the /api/growth/timeline fetch
-    setTimeout(() => {
-      setEvents([
-        {
-          id: "1",
-          date: selectedDate,
-          time: "07:30",
-          type: "psychological",
-          title: "Morning Readiness",
-          description: "Logged mood as 8/10. Energy 7/10.",
-          icon: "Brain",
-          details: {}
-        },
-        {
-          id: "2",
-          date: selectedDate,
-          time: "08:15",
-          type: "workout",
-          title: "Upper Body Hypertrophy",
-          description: "Completed 18 sets, 12,450kg volume.",
-          icon: "Dumbbell",
-          details: { duration: "52 mins" }
-        },
-        {
-          id: "3",
-          date: selectedDate,
-          time: "12:30",
-          type: "meal",
-          title: "Post-Workout Lunch",
-          description: "850 kcal, 65g Protein.",
-          icon: "Flame",
-          details: {}
-        },
-        {
-          id: "4",
-          date: selectedDate,
-          time: "14:00",
-          type: "ai_recommendation",
-          title: "AI Recovery Suggestion",
-          description: "Consider increasing water intake based on your heavy session.",
-          icon: "Bot",
-          details: { confidence: 0.92 }
+    async function fetchData() {
+      setLoading(true);
+      try {
+        // Fetch dashboard metrics
+        const dashboardRes = await fetch("/api/v1/pipeline/analytics/dashboard?user_id=1&timeframe=30d");
+        const dashboardJson = await dashboardRes.json();
+        
+        if (dashboardJson.status === "success") {
+          setDashboardData(dashboardJson);
         }
-      ]);
-      setLoading(false);
-    }, 600);
+
+        // Fetch timeline events for replay
+        const timelineRes = await fetch(`/api/v1/pipeline/analytics/timeline?user_id=1&limit=20`);
+        const timelineJson = await timelineRes.json();
+        
+        // Format events for ReplayMyDay component
+        const formattedEvents = timelineJson.map((e: any) => ({
+          id: e.id.toString(),
+          time: new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: e.category, // "workout", "sleep", "nutrition", "body", "recovery"
+          title: e.type.replace("_", " ").toUpperCase(),
+          details: Object.entries(e.payload).map(([k, v]) => `${k}: ${v}`).join(", ")
+        }));
+        setTimelineEvents(formattedEvents);
+
+      } catch (e) {
+        console.error("Failed to fetch analytics data", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
   }, [selectedDate]);
+
+  const getGraphConfig = () => {
+    switch (activeGraph) {
+      case "recovery":
+        return { type: "line" as const, lines: [{ key: "recovery", color: "#6366f1", name: "Recovery Score" }] };
+      case "volume":
+        return { type: "bar" as const, bars: [{ key: "volume", color: "#f59e0b", name: "Volume (kg)" }] };
+      case "consistency":
+      default:
+        return { type: "area" as const, areas: [{ key: "consistency", color: "#10b981", name: "Consistency (%)" }] };
+    }
+  };
+
+  if (loading && !dashboardData) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+        <p className="text-sm font-bold">Compiling Analytics Data...</p>
+      </div>
+    );
+  }
+
+  const graphConfig = getGraphConfig();
 
   return (
     <div className="flex flex-col gap-6 animate-smooth-reveal">
-      {/* Analytics Scorecards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col gap-1">
-          <span className="text-xs font-bold text-slate-500 uppercase">Workout Consistency</span>
-          <span className="text-2xl font-black text-emerald-600">92%</span>
-          <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold mt-1">
-            <TrendingUp className="w-3 h-3" /> +4% this month
-          </div>
+      
+      {/* Insight Scorecards */}
+      {dashboardData && dashboardData.cards && (
+        <div className="grid grid-cols-2 gap-3">
+          {dashboardData.cards.slice(0, 4).map((card: any, idx: number) => (
+            <InsightExplainer 
+              key={idx}
+              title={card.title}
+              value={typeof card.value === 'number' && card.value > 1000 ? (card.value / 1000).toFixed(1) + 'k' : (typeof card.value === 'number' ? card.value.toFixed(1) : card.value)}
+              explanation={card.explanation}
+              confidence={card.confidence}
+              trendDirection={card.trend_direction}
+              trendValue={card.trend_value}
+            />
+          ))}
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col gap-1">
-          <span className="text-xs font-bold text-slate-500 uppercase">Overtraining Risk</span>
-          <span className="text-2xl font-black text-amber-500">22%</span>
-          <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold mt-1">
-            <AlertTriangle className="w-3 h-3" /> Monitor sleep
-          </div>
-        </div>
-      </div>
+      )}
 
-      {/* Timeline Controls */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-inner">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500">
-            <CalendarIcon className="w-4 h-4" />
+      {/* Dynamic Graph Engine */}
+      {dashboardData && dashboardData.graph_data && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-black text-slate-900">Performance Trends</h3>
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              <button 
+                onClick={() => setActiveGraph("consistency")}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-colors ${activeGraph === 'consistency' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}
+              >
+                Consistency
+              </button>
+              <button 
+                onClick={() => setActiveGraph("recovery")}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-colors ${activeGraph === 'recovery' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}
+              >
+                Recovery
+              </button>
+              <button 
+                onClick={() => setActiveGraph("volume")}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-colors ${activeGraph === 'volume' ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500'}`}
+              >
+                Volume
+              </button>
+            </div>
           </div>
-          <input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-none text-sm font-bold text-slate-900 focus:ring-0 p-0"
+          <DynamicGraphEngine 
+            data={dashboardData.graph_data} 
+            type={graphConfig.type}
+            xKey="date"
+            lines={'lines' in graphConfig ? graphConfig.lines : undefined}
+            areas={'areas' in graphConfig ? graphConfig.areas : undefined}
+            bars={'bars' in graphConfig ? graphConfig.bars : undefined}
           />
         </div>
-        <button className="p-2 bg-white rounded-full border border-slate-200 text-slate-500 shadow-sm">
-          <Filter className="w-4 h-4" />
-        </button>
-      </div>
+      )}
 
-      {/* Timeline View */}
-      <div className="flex flex-col gap-4 relative">
-        <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200 rounded-full" />
-        
-        <h3 className="text-sm font-black text-slate-900 px-1 mb-2">Replay My Day</h3>
+      {/* Replay My Day Timeline */}
+      <ReplayMyDay events={timelineEvents} date={selectedDate} />
 
-        {loading ? (
-          <div className="ml-12 text-xs font-bold text-slate-400">Loading timeline...</div>
-        ) : (
-          events.map((event, idx) => (
-            <div key={event.id} className="flex gap-4 relative z-10">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center shadow-sm">
-                <Clock className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div className="flex-1 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-slate-400">{event.time}</span>
-                  {event.type === 'ai_recommendation' && (
-                    <PillBadge variant="purple">AI Insight</PillBadge>
-                  )}
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">{event.title}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{event.description}</p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 }

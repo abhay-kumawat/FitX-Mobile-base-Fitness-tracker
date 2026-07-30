@@ -3,14 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { Search, X, Dumbbell, Activity, Filter, Info, Plus } from "lucide-react";
 import { fitxAPI } from "@/lib/api";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 interface ExercisePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (exercise: any) => void;
+  onSelect?: (exercise: any) => void;
 }
 
 export function ExercisePickerModal({ isOpen, onClose, onSelect }: ExercisePickerModalProps) {
+  const addExercise = useWorkoutStore((state) => state.addExercise);
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState("");
   const [equipment, setEquipment] = useState("");
@@ -112,7 +114,11 @@ export function ExercisePickerModal({ isOpen, onClose, onSelect }: ExercisePicke
                 </div>
               </div>
               <button 
-                onClick={() => onSelect(ex)}
+                onClick={() => {
+                  if (onSelect) onSelect(ex);
+                  addExercise(ex);
+                  onClose();
+                }}
                 className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors"
               >
                 <Plus className="w-5 h-5" />

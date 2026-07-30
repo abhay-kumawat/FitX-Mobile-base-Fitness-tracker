@@ -108,6 +108,22 @@ def migrate():
             notes TEXT DEFAULT '',
             created_at DATETIME,
             FOREIGN KEY(user_id) REFERENCES users(id)
+        );""",
+        "ALTER TABLE workout_version_history ADD COLUMN actor_type VARCHAR DEFAULT 'USER';",
+        """CREATE TABLE IF NOT EXISTS workout_drafts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            plan_id INTEGER,
+            name VARCHAR NOT NULL,
+            proposed_by VARCHAR DEFAULT 'AI',
+            workout_data JSON NOT NULL,
+            diff_data JSON NOT NULL,
+            rationale TEXT,
+            status VARCHAR DEFAULT 'pending',
+            created_at DATETIME,
+            expires_at DATETIME,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(plan_id) REFERENCES workout_plans(id)
         );"""
     ]
     

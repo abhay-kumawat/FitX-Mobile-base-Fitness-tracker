@@ -146,10 +146,28 @@ class WorkoutVersionHistory(Base):
     version = Column(Integer, nullable=False)
     change_summary = Column(String, nullable=False)
     rationale = Column(Text, nullable=False)
+    actor_type = Column(String, default="USER") # USER or AI
     diff_data = Column(JSON, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     plan = relationship("WorkoutPlan", back_populates="versions")
+
+class WorkoutDraft(Base):
+    __tablename__ = "workout_drafts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    plan_id = Column(Integer, ForeignKey("workout_plans.id"), nullable=True)
+    name = Column(String, nullable=False)
+    proposed_by = Column(String, default="AI") # AI or USER
+    workout_data = Column(JSON, nullable=False) # The fully modified plan
+    diff_data = Column(JSON, nullable=False) # ADD, REMOVE, MODIFY breakdown
+    rationale = Column(Text, nullable=True)
+    status = Column(String, default="pending") # pending, approved, rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+
+    user = relationship("User")
 
 class WorkoutSession(Base):
     __tablename__ = "workout_sessions"

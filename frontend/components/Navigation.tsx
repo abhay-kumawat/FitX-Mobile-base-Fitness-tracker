@@ -149,7 +149,7 @@ export default function Navigation() {
       )}
 
       {/* Top Crisp Light Header Bar */}
-      <header className="sticky top-[34px] z-40 bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl h-13 flex items-center justify-between mx-auto w-full max-w-full shadow-xs px-3.5 py-2 mb-4 shrink-0">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl h-13 flex items-center justify-between mx-auto w-full max-w-full shadow-xs px-3.5 py-2 mb-4 shrink-0 mt-2">
         <div className="flex items-center space-x-2 shrink-0">
           <Link href="/skill-tree" className="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full hover:scale-105 transition-transform">
             <Crown className="w-3.5 h-3.5 text-amber-500" />

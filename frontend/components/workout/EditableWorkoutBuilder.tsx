@@ -3,22 +3,21 @@
 import React, { useState } from "react";
 import { Plus, GripVertical, Trash2, Edit3, Save } from "lucide-react";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 export function EditableWorkoutBuilder() {
   const [isEditing, setIsEditing] = useState(false);
-  const [exercises, setExercises] = useState([
-    { id: "ex1", name: "Barbell Bench Press", sets: 3, reps: "8-10", rest: 90 },
-    { id: "ex2", name: "Incline Dumbbell Press", sets: 3, reps: "10-12", rest: 60 }
-  ]);
+  const exercises = useWorkoutStore((state) => state.exercises);
+  const removeExercise = useWorkoutStore((state) => state.removeExercise);
 
   const toggleEdit = () => {
     soundscape.playTapSound();
     setIsEditing(!isEditing);
   };
 
-  const removeExercise = (id: string) => {
+  const handleRemove = (id: string) => {
     soundscape.playTapSound();
-    setExercises(prev => prev.filter(e => e.id !== id));
+    removeExercise(id);
   };
 
   return (
@@ -44,12 +43,12 @@ export function EditableWorkoutBuilder() {
             <div className="flex flex-col flex-1">
               <span className="text-xs font-black text-slate-700">{idx + 1}. {ex.name}</span>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                {ex.sets} Sets × {ex.reps} Reps • {ex.rest}s Rest
+                {ex.targetSets} Sets × {ex.sets[0]?.reps || 10} Reps • 90s Rest
               </span>
             </div>
             {isEditing && (
               <button 
-                onClick={() => removeExercise(ex.id)}
+                onClick={() => handleRemove(ex.id)}
                 className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
               >
                 <Trash2 className="w-4 h-4" />

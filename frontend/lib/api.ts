@@ -5,6 +5,7 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
+        "Authorization": "Bearer dev_token_user_1",
         ...options.headers,
       },
       ...options,

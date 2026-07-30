@@ -66,14 +66,14 @@ def generate_contextual_recommendations(db: Session, user_id: int, session_id: i
     db.commit()
     return persisted_recs
 
-def process_coach_chat(db: Session, user_id: int, message: str) -> dict:
+def process_coach_chat(db: Session, user_id: int, message: str, plan_id: int = None) -> dict:
     """
     Core AI Agent logic. 
     1. Loads conversational memory (AIConversation, AIMessage)
     2. Performs RAG over User Profile, RecoveryScore, FatigueLogs, WorkoutSessions
-    3. Returns natural language reply + structured proposed changes.
+    3. Returns natural language reply + structured proposed changes as a WorkoutDraft.
     """
-    from backend.models.models import AIConversation, AIMessage, Profile, RecoveryScore
+    from backend.models.models import AIConversation, AIMessage, Profile, RecoveryScore, WorkoutPlan, WorkoutDraft
     import json
     
     # 1. Fetch or create active conversation
@@ -95,15 +95,37 @@ def process_coach_chat(db: Session, user_id: int, message: str) -> dict:
     # 3. Formulate response (Simulated LLM Generation)
     reply_text = f"I see you're asking about '{message}'. Based on your profile (Goal: {profile.fitness_goal if profile else 'Unknown'}) and recent recovery score ({recovery.total_recovery_score if recovery else 'N/A'}), I recommend adjusting your volume."
     
+    draft = None
     suggested_actions = []
     
     # Simple trigger logic for demonstration of Workspace mode structured data
-    if "shoulder" in message.lower() or "pain" in message.lower():
-        reply_text = "I noticed you mentioned shoulder pain. I highly recommend swapping out heavy pressing movements today to protect your rotator cuff."
+    if "shoulder" in message.lower() or "pain" in message.lower() or "add" in message.lower():
+        reply_text = "I've drafted some changes to your workout plan to better suit your needs right now. Please review them."
         suggested_actions = [
-            {"label": "Swap Bench Press -> Machine Press", "action_type": "replace_exercise", "target": "Bench Press", "replacement": "Machine Press"},
-            {"label": "Reduce Upper Body Volume by 20%", "action_type": "reduce_volume", "target": "upper_body", "percentage": 20}
+            {"label": "Swap Bench Press -> Machine Press", "action_type": "replace_exercise", "target": "Bench Press", "replacement": "Machine Press"}
         ]
+        if plan_id:
+            # Load current plan to generate diff
+            current_plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+            if current_plan:
+                # Mock generating a draft based on user input
+                draft_data = dict(current_plan.workout_data)
+                diff_data = {
+                    "added": [{"name": "Machine Press", "rationale": "Easier on shoulders"}],
+                    "removed": [{"name": "Bench Press", "rationale": "Causes shoulder pain"}],
+                    "modified": []
+                }
+                draft = WorkoutDraft(
+                    user_id=user_id,
+                    plan_id=plan_id,
+                    name=f"Proposed Plan Revision",
+                    workout_data=draft_data,
+                    diff_data=diff_data,
+                    rationale="Adjusted due to reported shoulder pain."
+                )
+                db.add(draft)
+                db.commit()
+                db.refresh(draft)
         
     coach_msg = AIMessage(
         conversation_id=conv.id, 
@@ -116,6 +138,8 @@ def process_coach_chat(db: Session, user_id: int, message: str) -> dict:
     
     return {
         "reply": reply_text,
+        "draft_id": draft.id if draft else None,
+        "diff_data": draft.diff_data if draft else None,
         "suggested_actions": suggested_actions,
         "confidence": 0.94
     }

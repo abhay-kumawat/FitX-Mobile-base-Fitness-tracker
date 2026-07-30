@@ -40,6 +40,9 @@ interface WorkoutState {
   toggleWarmupModal: (show?: boolean) => void;
   openPlateModal: (weightKg: number) => void;
   closePlateModal: () => void;
+  addExercise: (exercise: any) => void;
+  removeExercise: (exerciseId: string) => void;
+  reorderExercises: (startIndex: number, endIndex: number) => void;
   finishWorkout: () => void;
   closeVictoryModal: () => void;
 }
@@ -138,6 +141,40 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         return { ...ex, sets: newSets };
       });
       return { exercises: updatedExercises };
+    });
+  },
+
+  addExercise: (ex) => {
+    set((state) => {
+      const newExercise: ExerciseItem = {
+        id: ex.id || Date.now().toString(),
+        name: ex.name,
+        muscleTag: ex.primary_muscle || "General",
+        formGuard: "Form Guard: Focus on technique",
+        tips: ex.instructions || ["Maintain proper form"],
+        targetSets: 3,
+        sets: [
+          { setNumber: 1, weightKg: 0, reps: 10, completed: false, type: "work" },
+          { setNumber: 2, weightKg: 0, reps: 10, completed: false, type: "work" },
+          { setNumber: 3, weightKg: 0, reps: 10, completed: false, type: "work" }
+        ]
+      };
+      return { exercises: [...state.exercises, newExercise] };
+    });
+  },
+
+  removeExercise: (exerciseId) => {
+    set((state) => ({
+      exercises: state.exercises.filter((e) => e.id !== exerciseId)
+    }));
+  },
+
+  reorderExercises: (startIndex, endIndex) => {
+    set((state) => {
+      const result = Array.from(state.exercises);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return { exercises: result };
     });
   },
 
