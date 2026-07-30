@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: fitx-backend
+    runtime: python
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: DATABASE_URL
+        value: sqlite:///./fitx.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
