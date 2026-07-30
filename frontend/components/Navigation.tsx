@@ -22,7 +22,8 @@ import {
   Cpu,
   Layers,
   ShieldCheck,
-  Globe
+  Globe,
+  LogOut
 } from "lucide-react";
 import ConfettiBurst from "./ConfettiBurst";
 import { soundscape } from "@/lib/soundscapeEngine";
@@ -36,7 +37,7 @@ export default function Navigation() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   const navItems = [
     { label: "Home", href: "/dashboard", icon: Home },
@@ -188,6 +189,19 @@ export default function Navigation() {
               {isAuthenticated ? "Abhay" : "Google 2FA"}
             </span>
           </button>
+
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                soundscape.playTapSound();
+                logout();
+              }}
+              className="p-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors"
+              title="Log Out"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+            </button>
+          )}
 
           <button
             onClick={() => setCmdOpen(true)}

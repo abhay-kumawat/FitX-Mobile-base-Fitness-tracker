@@ -27,17 +27,23 @@ import {
   ChevronRight,
   UserPlus,
   LogIn,
+  LogOut,
   LayoutDashboard
 } from "lucide-react";
 
 export default function WebsiteLandingPage() {
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   const handleOpenAuth = () => {
     soundscape.playTapSound();
     setAuthModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    soundscape.playTapSound();
+    logout();
   };
 
   const handleEnterApp = () => {
@@ -130,13 +136,24 @@ export default function WebsiteLandingPage() {
 
         <div className="flex items-center space-x-2">
           {isAuthenticated ? (
-            <button
-              onClick={handleEnterApp}
-              className="py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Enter App</span>
-            </button>
+            <>
+              <button
+                onClick={handleEnterApp}
+                className="py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Enter App</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="py-1.5 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs flex items-center space-x-1 border border-rose-200 transition-all"
+                title="Sign Out of FitX"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                <span>Log Out</span>
+              </button>
+            </>
           ) : (
             <>
               <button
