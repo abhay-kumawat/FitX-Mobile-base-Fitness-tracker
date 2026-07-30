@@ -47,7 +47,20 @@ export const fitxAPI = {
     }),
   getEvents: (startDate: string, endDate: string) =>
     fetchFromAPI(`/workout/events?start_date=${startDate}&end_date=${endDate}`),
+  getCalendarAssignments: (startDate: string, endDate: string) =>
+    fetchFromAPI(`/workout/calendar/assignments?start_date=${startDate}&end_date=${endDate}`),
+  assignCalendarWorkout: (payload: any) =>
+    fetchFromAPI("/workout/calendar/assign", { method: "POST", body: JSON.stringify(payload) }),
+  updateDayWorkout: (plannedDate: string, payload: any) =>
+    fetchFromAPI(`/workout/calendar/day/${plannedDate}`, { method: "PUT", body: JSON.stringify(payload) }),
+  performDayAction: (plannedDate: string, action: string, targetDate?: string, payload?: any) =>
+    fetchFromAPI(`/workout/calendar/day/${plannedDate}/action`, { method: "POST", body: JSON.stringify({ action, target_date: targetDate, ...payload }) }),
+  deleteDayAssignment: (plannedDate: string) =>
+    fetchFromAPI(`/workout/calendar/day/${plannedDate}`, { method: "DELETE" }),
+  getDayHistory: (plannedDate: string) =>
+    fetchFromAPI(`/workout/calendar/day/${plannedDate}/history`),
   getPlans: () => fetchFromAPI("/workout/plans"),
+
   createPlan: (plan: any) => fetchFromAPI("/workout/plans", { method: "POST", body: JSON.stringify(plan) }),
   updatePlan: (id: number, plan: any) => fetchFromAPI(`/workout/plans/${id}`, { method: "PUT", body: JSON.stringify(plan) }),
   getExercises: (query: string, muscle: string, equipment: string, difficulty: string | null) => {

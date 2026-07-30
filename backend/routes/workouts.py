@@ -212,11 +212,312 @@ def get_ai_recommendations(
         q = q.filter(AIWorkoutRecommendation.context_type == context_type)
     return q.order_by(AIWorkoutRecommendation.created_at.desc()).limit(10).all()
 
-from backend.models.models import WorkoutPlan, WorkoutEvent, CustomExercise, FavoriteExercise
+from backend.models.models import WorkoutPlan, WorkoutEvent, CustomExercise, FavoriteExercise, WorkoutAssignment, WorkoutRevision
 from backend.schemas.schemas import (
     WorkoutPlanCreate, WorkoutPlanOut, WorkoutEventCreate, WorkoutEventOut,
-    CustomExerciseCreate, CustomExerciseOut
+    CustomExerciseCreate, CustomExerciseOut,
+    WorkoutAssignmentCreate, WorkoutAssignmentOut, DayActionRequest, WorkoutRevisionOut
 )
+
+# --- Calendar Assignment & Day Actions ---
+
+@router.get("/calendar/assignments", response_model=List[WorkoutAssignmentOut])
+def get_calendar_assignments(
+    start_date: str,
+    end_date: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(WorkoutAssignment).filter(
+        WorkoutAssignment.user_id == current_user.id,
+        WorkoutAssignment.planned_date >= start_date,
+        WorkoutAssignment.planned_date <= end_date
+    ).all()
+
+@router.post("/calendar/assign", response_model=WorkoutAssignmentOut)
+def assign_calendar_workout(
+    inp: WorkoutAssignmentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    existing = db.query(WorkoutAssignment).filter(
+        WorkoutAssignment.user_id == current_user.id,
+        WorkoutAssignment.planned_date == inp.planned_date
+    ).first()
+
+    if existing:
+        rev = WorkoutRevision(
+            assignment_id=existing.id,
+            user_id=current_user.id,
+            action="update",
+            previous_data=existing.workout_data,
+            new_data=inp.workout_data
+        )
+        db.add(rev)
+        existing.assignment_type = inp.assignment_type
+        existing.name = inp.name
+        existing.goal = inp.goal
+        existing.template_id = inp.template_id
+        existing.workout_data = inp.workout_data
+        existing.notes = inp.notes or ""
+        existing.completion_status = inp.completion_status
+        db.commit()
+        db.refresh(existing)
+        return existing
+    else:
+        assignment = WorkoutAssignment(
+            user_id=current_user.id,
+            planned_date=inp.planned_date,
+            assignment_type=inp.assignment_type,
+            name=inp.name,
+            goal=inp.goal,
+            template_id=inp.template_id,
+            workout_data=inp.workout_data,
+            notes=inp.notes or "",
+            completion_status=inp.completion_status
+        )
+        db.add(assignment)
+        db.commit()
+        db.refresh(assignment)
+        
+        rev = WorkoutRevision(
+            assignment_id=assignment.id,
+            user_id=current_user.id,
+            action="create",
+            previous_data=None,
+            new_data=inp.workout_data
+        )
+        db.add(rev)
+        db.commit()
+        return assignment
+
+@router.put("/calendar/day/{planned_date}", response_model=WorkoutAssignmentOut)
+def update_day_workout(
+    planned_date: str,
+    inp: WorkoutAssignmentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    inp.planned_date = planned_date
+    return assign_calendar_workout(inp, current_user, db)
+
+@router.post("/calendar/day/{planned_date}/action")
+def perform_day_action(
+    planned_date: str,
+    inp: DayActionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    assignment = db.query(WorkoutAssignment).filter(
+        WorkoutAssignment.user_id == current_user.id,
+        WorkoutAssignment.planned_date == planned_date
+    ).first()
+
+    if inp.action == "rest":
+        if not assignment:
+            assignment = WorkoutAssignment(
+                user_id=current_user.id,
+                planned_date=planned_date,
+                assignment_type="rest",
+                name="Rest & Recovery",
+                workout_data={"exercises": []},
+                completion_status="rest"
+            )
+            db.add(assignment)
+        else:
+            assignment.assignment_type = "rest"
+            assignment.name = "Rest & Recovery"
+            assignment.workout_data = {"exercises": []}
+            assignment.completion_status = "rest"
+        db.commit()
+        db.refresh(assignment)
+        return assignment
+
+    if inp.action == "move" and inp.target_date:
+        if not assignment:
+            raise HTTPException(status_code=404, detail="No assignment on source date")
+        target_assignment = db.query(WorkoutAssignment).filter(
+            WorkoutAssignment.user_id == current_user.id,
+            WorkoutAssignment.planned_date == inp.target_date
+        ).first()
+        if target_assignment:
+            db.delete(target_assignment)
+        assignment.planned_date = inp.target_date
+        db.commit()
+        db.refresh(assignment)
+        return assignment
+
+    if inp.action == "swap" and inp.target_date:
+        source = assignment
+        target = db.query(WorkoutAssignment).filter(
+            WorkoutAssignment.user_id == current_user.id,
+            WorkoutAssignment.planned_date == inp.target_date
+        ).first()
+
+        if source and target:
+            source.planned_date, target.planned_date = inp.target_date, planned_date
+        elif source and not target:
+            source.planned_date = inp.target_date
+        elif not source and target:
+            target.planned_date = planned_date
+        db.commit()
+        return {"status": "swapped", "source_date": planned_date, "target_date": inp.target_date}
+
+    if inp.action == "duplicate" and inp.target_date:
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Source assignment not found")
+        target = db.query(WorkoutAssignment).filter(
+            WorkoutAssignment.user_id == current_user.id,
+            WorkoutAssignment.planned_date == inp.target_date
+        ).first()
+        if target:
+            target.assignment_type = assignment.assignment_type
+            target.name = assignment.name
+            target.workout_data = assignment.workout_data
+            target.notes = assignment.notes
+        else:
+            target = WorkoutAssignment(
+                user_id=current_user.id,
+                planned_date=inp.target_date,
+                assignment_type=assignment.assignment_type,
+                name=assignment.name,
+                workout_data=assignment.workout_data,
+                notes=assignment.notes
+            )
+            db.add(target)
+        db.commit()
+        db.refresh(target)
+        return target
+
+    if inp.action == "ai_generate":
+        generated_workout = {
+            "exercises": [
+                {
+                    "id": f"ai_{int(datetime.utcnow().timestamp())}_1",
+                    "name": "Barbell Bench Press",
+                    "muscleTag": "Chest & Triceps",
+                    "formGuard": "Keep scapula retracted",
+                    "tips": ["Controlled eccentric", "Drive feet into floor"],
+                    "targetSets": 4,
+                    "sets": [
+                        {"setNumber": 1, "weightKg": 70, "reps": 10, "completed": False, "type": "warmup"},
+                        {"setNumber": 2, "weightKg": 85, "reps": 8, "completed": False, "type": "work"},
+                        {"setNumber": 3, "weightKg": 90, "reps": 6, "completed": False, "type": "work"},
+                        {"setNumber": 4, "weightKg": 90, "reps": 6, "completed": False, "type": "work"}
+                    ]
+                },
+                {
+                    "id": f"ai_{int(datetime.utcnow().timestamp())}_2",
+                    "name": "Incline DB Flyes",
+                    "muscleTag": "Upper Chest",
+                    "formGuard": "Slight elbow bend",
+                    "tips": ["Deep stretch at bottom"],
+                    "targetSets": 3,
+                    "sets": [
+                        {"setNumber": 1, "weightKg": 22, "reps": 12, "completed": False, "type": "work"},
+                        {"setNumber": 2, "weightKg": 24, "reps": 10, "completed": False, "type": "work"},
+                        {"setNumber": 3, "weightKg": 24, "reps": 10, "completed": False, "type": "work"}
+                    ]
+                }
+            ]
+        }
+        if not assignment:
+            assignment = WorkoutAssignment(
+                user_id=current_user.id,
+                planned_date=planned_date,
+                assignment_type="workout",
+                name="AI Hypertrophy Plan",
+                workout_data=generated_workout
+            )
+            db.add(assignment)
+        else:
+            assignment.workout_data = generated_workout
+            assignment.name = "AI Hypertrophy Plan"
+            assignment.assignment_type = "workout"
+        db.commit()
+        db.refresh(assignment)
+        return assignment
+
+    if inp.action == "ai_optimize":
+        if assignment and assignment.workout_data:
+            exs = assignment.workout_data.get("exercises", [])
+            for ex in exs:
+                ex["tips"].append("AI Tip: Increased rest to 120s for strength recovery")
+            assignment.workout_data = {"exercises": exs}
+            db.commit()
+            db.refresh(assignment)
+            return assignment
+        else:
+            raise HTTPException(status_code=400, detail="No workout data to optimize")
+
+    if inp.action == "update_notes" and inp.notes is not None:
+        if not assignment:
+            assignment = WorkoutAssignment(
+                user_id=current_user.id,
+                planned_date=planned_date,
+                assignment_type="workout",
+                name="Notes Only",
+                workout_data={"exercises": []},
+                notes=inp.notes
+            )
+            db.add(assignment)
+        else:
+            assignment.notes = inp.notes
+        db.commit()
+        db.refresh(assignment)
+        return assignment
+
+    raise HTTPException(status_code=400, detail=f"Unsupported action: {inp.action}")
+
+@router.delete("/calendar/day/{planned_date}")
+def delete_day_assignment(
+    planned_date: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    assignment = db.query(WorkoutAssignment).filter(
+        WorkoutAssignment.user_id == current_user.id,
+        WorkoutAssignment.planned_date == planned_date
+    ).first()
+
+    if assignment:
+        db.delete(assignment)
+        db.commit()
+        return {"status": "deleted", "planned_date": planned_date}
+    return {"status": "not_found", "planned_date": planned_date}
+
+@router.get("/calendar/day/{planned_date}/history", response_model=List[WorkoutRevisionOut])
+def get_day_history(
+    planned_date: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    assignment = db.query(WorkoutAssignment).filter(
+        WorkoutAssignment.user_id == current_user.id,
+        WorkoutAssignment.planned_date == planned_date
+    ).first()
+
+    if not assignment:
+        return []
+
+    return db.query(WorkoutRevision).filter(
+        WorkoutRevision.assignment_id == assignment.id,
+        WorkoutRevision.user_id == current_user.id
+    ).order_by(WorkoutRevision.created_at.desc()).all()
+
+@router.get("/events", response_model=List[WorkoutEventOut])
+def get_events(
+    start_date: str,
+    end_date: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(WorkoutEvent).filter(
+        WorkoutEvent.user_id == current_user.id,
+        WorkoutEvent.planned_date >= start_date,
+        WorkoutEvent.planned_date <= end_date
+    ).all()
+
 
 @router.post("/plans", response_model=WorkoutPlanOut)
 def create_plan(

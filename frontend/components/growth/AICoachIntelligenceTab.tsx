@@ -90,9 +90,10 @@ export function AICoachIntelligenceTab() {
                       </ul>
                     </div>
                     
-                    <Button3D variant="primary" className="text-xs py-2.5">
+                    <Button3D variant="gold" className="text-xs py-2.5">
                       {rec.actionLabel}
                     </Button3D>
+
                   </div>
                 )}
               </div>

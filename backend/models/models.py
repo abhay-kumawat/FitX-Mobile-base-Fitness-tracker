@@ -879,6 +879,32 @@ class WorkoutEvent(Base):
     status = Column(String, default="scheduled") # scheduled, completed, skipped
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class WorkoutAssignment(Base):
+    __tablename__ = "workout_assignments"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    planned_date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    assignment_type = Column(String, default="workout") # workout, rest, recovery, cardio, unassigned
+    name = Column(String, nullable=False, default="Workout")
+    goal = Column(String, default="Hypertrophy")
+    template_id = Column(Integer, ForeignKey("workout_plans.id"), nullable=True)
+    workout_data = Column(JSON, nullable=False, default=dict) # {"exercises": [...]}
+    notes = Column(Text, default="")
+    completion_status = Column(String, default="scheduled") # scheduled, in_progress, completed, skipped, rest
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class WorkoutRevision(Base):
+    __tablename__ = "workout_revisions"
+    id = Column(Integer, primary_key=True, index=True)
+    assignment_id = Column(Integer, ForeignKey("workout_assignments.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action = Column(String, nullable=False) # create, update, swap, move, rest, ai_optimize, ai_generate
+    previous_data = Column(JSON, nullable=True)
+    new_data = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class AIConversation(Base):
     __tablename__ = "ai_conversations"
     id = Column(Integer, primary_key=True, index=True)

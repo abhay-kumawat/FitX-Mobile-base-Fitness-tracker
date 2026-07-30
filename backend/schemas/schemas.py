@@ -432,6 +432,51 @@ class WorkoutEventOut(BaseModel):
     class Config:
         from_attributes = True
 
+class WorkoutAssignmentCreate(BaseModel):
+    planned_date: str # YYYY-MM-DD
+    assignment_type: str = "workout" # workout, rest, recovery, cardio, unassigned
+    name: str = "Workout"
+    goal: str = "Hypertrophy"
+    template_id: Optional[int] = None
+    workout_data: Dict[str, Any] = {"exercises": []}
+    notes: Optional[str] = ""
+    completion_status: str = "scheduled"
+
+class WorkoutAssignmentOut(BaseModel):
+    id: int
+    user_id: int
+    planned_date: str
+    assignment_type: str
+    name: str
+    goal: str
+    template_id: Optional[int] = None
+    workout_data: Dict[str, Any]
+    notes: Optional[str] = ""
+    completion_status: str
+    created_at: datetime
+    updated_at: datetime
+    class Config:
+        from_attributes = True
+
+class DayActionRequest(BaseModel):
+    action: str # move, swap, duplicate, rest, ai_generate, ai_optimize, update_notes
+    target_date: Optional[str] = None # For move, swap, duplicate
+    template_id: Optional[int] = None
+    workout_data: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+
+class WorkoutRevisionOut(BaseModel):
+    id: int
+    assignment_id: int
+    user_id: int
+    action: str
+    previous_data: Optional[Dict[str, Any]] = None
+    new_data: Dict[str, Any]
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
 class CustomExerciseCreate(BaseModel):
     name: str
     category: str

@@ -5,10 +5,13 @@ import { useWorkoutStore } from "@/store/useWorkoutStore";
 import { MascotVector } from "@/components/atomic/MascotVector";
 import { PillBadge } from "@/components/atomic/PillBadge";
 import { Button3D } from "@/components/atomic/Button3D";
-import { DetailedSetLogger } from "@/components/workout/DetailedSetLogger";
+import { CurrentSetLogger } from "@/components/workout/CurrentSetLogger";
+import { CollapsedSetRow } from "@/components/workout/CollapsedSetRow";
 import { RestTimerEngine } from "@/components/workout/RestTimerEngine";
 import { WorkoutPlanner } from "@/components/workout/WorkoutPlanner";
 import { EditableWorkoutBuilder } from "@/components/workout/EditableWorkoutBuilder";
+import { WorkoutAddModal } from "@/components/workout/WorkoutAddModal";
+import { DayActionContextMenu } from "@/components/workout/DayActionContextMenu";
 import { ExercisePickerModal } from "@/components/workout/ExercisePickerModal";
 import { DraggableFloatingAI } from "@/components/coach_chat/DraggableFloatingAI";
 import { WarmupPyramidModal } from "@/components/workout/WarmupPyramidModal";
@@ -22,6 +25,7 @@ import { ChevronRight, ChevronLeft, Flame, Info, CheckCircle2, Dumbbell, Calenda
 export default function WorkoutHUDPage() {
   const workoutStore = useWorkoutStore();
   const [mounted, setMounted] = useState(false);
+
   const [activeTab, setActiveTab] = useState<"planner" | "active">("active");
   const [showTips, setShowTips] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -182,24 +186,106 @@ export default function WorkoutHUDPage() {
                 </div>
               </div>
 
-              {/* Detailed Set Logger */}
-              <div className="flex flex-col gap-2.5">
-                {(currentExercise.sets || []).map((set, idx) => (
-                  <DetailedSetLogger
-                    key={idx}
-                    exerciseId={currentExercise.id}
-                    setIndex={idx}
-                    set={set}
-                    onLogSet={(data) => {
-                      workoutStore.toggleSetComplete(currentExercise.id, idx, data);
-                    }}
-                  />
-                ))}
-              </div>
+              {/* Guided Workout Sets */}
+              <div className="flex flex-col gap-3">
+                {(() => {
+                  const sets = currentExercise.sets || [];
+                  const activeSetIndex = sets.findIndex(s => !s.completed);
+                  const isAllComplete = activeSetIndex === -1;
+                  
+                  return (
+                    <>
+                      {/* Completed Sets (Collapsed) */}
+                      {sets.map((set, idx) => {
+                        if (isAllComplete || idx < activeSetIndex) {
+                          return (
+                            <CollapsedSetRow
+                              key={idx}
+                              exerciseId={currentExercise.id}
+                              setIndex={idx}
+                              set={set}
+                              onLogSet={(data) => {
+                                workoutStore.toggleSetComplete(currentExercise.id, idx, data);
+                              }}
+                            />
+                          );
+                        }
+                        return null;
+                      })}
 
-              {/* Rest Timer Engine */}
-              <div className="pt-2 border-t border-slate-200">
-                <RestTimerEngine initialSeconds={90} mode="rest" />
+                      {/* Active Set or Rest Timer */}
+                      {!isAllComplete && workoutStore.isRestActive ? (
+                        <div className="flex flex-col gap-2 animate-smooth-reveal">
+                          <RestTimerEngine 
+                            initialSeconds={workoutStore.restCountdownSeconds || 90} 
+                            autoStart={true}
+                            onComplete={() => workoutStore.stopRestTimer()}
+                          />
+                          <button 
+                            onClick={() => workoutStore.stopRestTimer()}
+                            className="text-xs font-bold text-slate-400 hover:text-slate-600 underline text-center"
+                          >
+                            Skip Rest
+                          </button>
+                          <div className="mt-2 opacity-60 pointer-events-none scale-95 origin-top">
+                            {/* Peek at the next set */}
+                            <CurrentSetLogger
+                              exerciseId={currentExercise.id}
+                              setIndex={activeSetIndex}
+                              set={sets[activeSetIndex]}
+                            />
+                          </div>
+                        </div>
+                      ) : !isAllComplete ? (
+                        <div className="animate-smooth-reveal">
+                          <CurrentSetLogger
+                            exerciseId={currentExercise.id}
+                            setIndex={activeSetIndex}
+                            set={sets[activeSetIndex]}
+                            onLogSet={(data) => {
+                              workoutStore.toggleSetComplete(currentExercise.id, activeSetIndex, data);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center animate-smooth-reveal flex flex-col items-center justify-center">
+                          <span className="text-sm font-black text-emerald-600 block mb-3">Exercise Complete!</span>
+                          {currentExerciseIndex < exercisesList.length - 1 ? (
+                            <button
+                              onClick={() => {
+                                soundscape.playTapSound();
+                                workoutStore.nextExercise();
+                              }}
+                              className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 shadow-sm"
+                            >
+                              Move to Next Exercise
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleOpenFinishReport}
+                              className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 shadow-sm"
+                            >
+                              Finish Workout
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Upcoming Sets (Minimal) */}
+                      {!isAllComplete && sets.map((set, idx) => {
+                        if (idx > activeSetIndex) {
+                          return (
+                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 opacity-50">
+                              <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Set {set.setNumber}</span>
+                              <span className="text-xs font-bold text-slate-400">{set.weightKg} kg × {set.reps}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -260,6 +346,11 @@ export default function WorkoutHUDPage() {
         onClose={() => workoutStore.toggleReportModal(false)}
         onSubmitReport={handleFinalSubmit}
       />
+
+      {/* Calendar Planner Modals & Context Menus */}
+      <WorkoutAddModal />
+      <DayActionContextMenu />
     </div>
   );
+
 }

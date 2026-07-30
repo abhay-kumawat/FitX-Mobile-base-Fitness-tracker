@@ -41,6 +41,22 @@ interface WorkoutState {
   selectedWeightForPlate: number;
   lastSessionSummary: any;
 
+  // Calendar Scheduling State
+  selectedDate: string;
+  calendarAssignments: Record<string, any>;
+  isCalendarLoading: boolean;
+  showAddModal: boolean;
+  showContextMenu: boolean;
+  activeContextMenuDate: string | null;
+
+  selectDate: (dateStr: string) => Promise<void>;
+  fetchCalendarWeek: (startDate: string, endDate: string) => Promise<void>;
+  assignToDay: (dateStr: string, assignmentData: any) => Promise<void>;
+  saveSelectedDayWorkout: (exercises: ExerciseItem[]) => Promise<void>;
+  performDayActionStore: (dateStr: string, action: string, targetDate?: string, payload?: any) => Promise<void>;
+  toggleAddModal: (show?: boolean) => void;
+  toggleContextMenu: (show?: boolean, dateStr?: string | null) => void;
+
   syncActiveSession: () => Promise<void>;
   startWorkout: (name?: string) => Promise<void>;
   pauseWorkout: () => Promise<void>;
@@ -70,6 +86,7 @@ interface WorkoutState {
   loadPlanIntoActive: (planName: string, exercisesList: ExerciseItem[]) => void;
   closeVictoryModal: () => void;
 }
+
 
 const initialExercises: ExerciseItem[] = [
   {
@@ -143,7 +160,153 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   selectedWeightForPlate: 80,
   lastSessionSummary: null,
 
+  // Calendar Scheduling State
+  selectedDate: new Date().toISOString().split("T")[0],
+  calendarAssignments: {},
+  isCalendarLoading: false,
+  showAddModal: false,
+  showContextMenu: false,
+  activeContextMenuDate: null,
+
+  selectDate: async (dateStr: string) => {
+    set({ selectedDate: dateStr });
+    const { calendarAssignments } = get();
+    const assignment = calendarAssignments[dateStr];
+    if (assignment) {
+      if (assignment.assignment_type === "rest") {
+        set({
+          workoutName: "Rest & Active Recovery",
+          exercises: [],
+          currentExerciseIndex: 0
+        });
+      } else {
+        const exs = assignment.workout_data?.exercises || [];
+        set({
+          workoutName: assignment.name || "Custom Workout",
+          exercises: exs.length > 0 ? exs : initialExercises,
+          currentExerciseIndex: 0
+        });
+      }
+    }
+  },
+
+  fetchCalendarWeek: async (startDate: string, endDate: string) => {
+    set({ isCalendarLoading: true });
+    try {
+      const res = await fitxAPI.getCalendarAssignments(startDate, endDate);
+      const map: Record<string, any> = {};
+      if (Array.isArray(res)) {
+        res.forEach((item: any) => {
+          map[item.planned_date] = item;
+        });
+      }
+      set({ calendarAssignments: map });
+
+      const { selectedDate } = get();
+      if (map[selectedDate]) {
+        const item = map[selectedDate];
+        if (item.assignment_type === "rest") {
+          set({ workoutName: "Rest & Active Recovery", exercises: [], currentExerciseIndex: 0 });
+        } else if (item.workout_data?.exercises?.length > 0) {
+          set({ workoutName: item.name, exercises: item.workout_data.exercises, currentExerciseIndex: 0 });
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch calendar assignments", e);
+    } finally {
+      set({ isCalendarLoading: false });
+    }
+  },
+
+  assignToDay: async (dateStr: string, assignmentData: any) => {
+    try {
+      const payload = {
+        planned_date: dateStr,
+        assignment_type: assignmentData.assignment_type || "workout",
+        name: assignmentData.name || "Custom Workout",
+        goal: assignmentData.goal || "Hypertrophy",
+        template_id: assignmentData.template_id || null,
+        workout_data: assignmentData.workout_data || { exercises: [] },
+        notes: assignmentData.notes || "",
+        completion_status: assignmentData.completion_status || "scheduled"
+      };
+      
+      const res = await fitxAPI.assignCalendarWorkout(payload);
+      const updated = res || payload;
+
+      set((state) => {
+        const newMap = { ...state.calendarAssignments, [dateStr]: updated };
+        const isCurrentSelected = state.selectedDate === dateStr;
+        return {
+          calendarAssignments: newMap,
+          ...(isCurrentSelected ? {
+            workoutName: updated.name,
+            exercises: updated.workout_data?.exercises || [],
+            currentExerciseIndex: 0
+          } : {})
+        };
+      });
+    } catch (e) {
+      console.warn("Error assigning workout to day", e);
+    }
+  },
+
+  saveSelectedDayWorkout: async (updatedExercises: ExerciseItem[]) => {
+    const { selectedDate, workoutName, calendarAssignments } = get();
+    const existing = calendarAssignments[selectedDate] || {};
+
+    const payload = {
+      planned_date: selectedDate,
+      assignment_type: updatedExercises.length === 0 ? "rest" : "workout",
+      name: workoutName || "Custom Workout",
+      goal: existing.goal || "Hypertrophy",
+      template_id: existing.template_id || null,
+      workout_data: { exercises: updatedExercises },
+      notes: existing.notes || "",
+      completion_status: existing.completion_status || "scheduled"
+    };
+
+    set({ exercises: updatedExercises });
+
+    try {
+      const res = await fitxAPI.assignCalendarWorkout(payload);
+      if (res) {
+        set((state) => ({
+          calendarAssignments: { ...state.calendarAssignments, [selectedDate]: res }
+        }));
+      }
+    } catch (e) {
+      console.warn("Failed to save selected day workout to backend", e);
+    }
+  },
+
+  performDayActionStore: async (dateStr: string, action: string, targetDate?: string, payload?: any) => {
+    try {
+      await fitxAPI.performDayAction(dateStr, action, targetDate, payload);
+      // Refresh timeline
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      const d1 = new Date(today);
+      d1.setDate(diff);
+      const d2 = new Date(today);
+      d2.setDate(diff + 6);
+      const start = d1.toISOString().split("T")[0];
+      const end = d2.toISOString().split("T")[0];
+      await get().fetchCalendarWeek(start, end);
+    } catch (e) {
+      console.warn(`Day action ${action} failed`, e);
+    }
+  },
+
+  toggleAddModal: (show) => set((state) => ({ showAddModal: show ?? !state.showAddModal })),
+  toggleContextMenu: (show, dateStr) => set((state) => ({
+    showContextMenu: show ?? !state.showContextMenu,
+    activeContextMenuDate: dateStr !== undefined ? dateStr : state.activeContextMenuDate
+  })),
+
   syncActiveSession: async () => {
+
     try {
       const active = await fitxAPI.getActiveSession();
       if (active && active.id) {

@@ -2,7 +2,8 @@ import { fetchApi } from './apiBase';
 
 export interface LogWorkoutSetPayload {
   session_id: number;
-  exercise_name: str;
+  exercise_name: string;
+
   set_number: number;
   set_type: "warmup" | "work" | "failure" | "dropset";
   planned_reps?: number;

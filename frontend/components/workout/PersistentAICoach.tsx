@@ -46,7 +46,8 @@ export function PersistentAICoach() {
         onClick={() => setIsExpanded(true)}
         className="fixed bottom-24 right-4 p-3 bg-slate-900 rounded-full shadow-lg border border-slate-700 z-50 flex items-center justify-center animate-pulse-soft"
       >
-        <MascotVector mood="focused" size={32} />
+        <MascotVector mood="pumped" size={32} />
+
         {recommendations.length > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[8px] font-bold text-white">
             {recommendations.length}
@@ -61,7 +62,8 @@ export function PersistentAICoach() {
       {/* Header */}
       <div className="bg-slate-900 p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MascotVector mood="focused" size={28} />
+          <MascotVector mood="pumped" size={28} />
+
           <span className="text-sm font-black text-white flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400" /> AI Coach
           </span>

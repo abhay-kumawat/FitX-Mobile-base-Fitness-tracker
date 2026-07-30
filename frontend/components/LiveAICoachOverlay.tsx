@@ -11,6 +11,9 @@ export default function LiveAICoachOverlay() {
 
   const [messages, setMessages] = useState<Array<{ role: string; text: string; context?: any; actionPayload?: any }>>([]);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
 
   useEffect(() => {
     if (messages.length === 0) {
