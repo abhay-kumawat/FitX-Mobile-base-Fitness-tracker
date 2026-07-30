@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { 
@@ -35,6 +36,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
     logout 
   } = useAuthStore();
 
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"google" | "email" | "2fa">("google");
   const [totpCode, setTotpCode] = useState(["", "", "", "", "", ""]);
   const [emailInput, setEmailInput] = useState("abhaykumawat@gmail.com");
@@ -45,6 +47,10 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
   const [successMessage, setSuccessMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(24);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Synchronize 2FA step if required
   useEffect(() => {
@@ -61,7 +67,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
     return () => clearInterval(interval);
   }, []);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || typeof window === "undefined") return null;
 
   const handleGoogleSignIn = () => {
     soundscape.playTapSound();
@@ -427,6 +433,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
