@@ -8,6 +8,8 @@ import { QuestRow } from "@/components/atomic/QuestRow";
 import { PillBadge } from "@/components/atomic/PillBadge";
 import { ProgressBar } from "@/components/atomic/ProgressBar";
 import Link from "next/link";
+import { GoogleAuthModal } from "@/components/GoogleAuthModal";
+import { useAuthStore } from "@/store/useAuthStore";
 import { 
   Flame, 
   Search, 
@@ -23,12 +25,16 @@ import {
   ArrowRight,
   Zap,
   Dumbbell,
-  Globe
+  Globe,
+  ShieldCheck,
+  KeyRound
 } from "lucide-react";
 
 export default function HomeHubPage() {
   const { level = 5, xp = 2450, streakDays = 12, quests = [] } = useGamificationStore();
+  const { user } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -59,6 +65,8 @@ export default function HomeHubPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
+      <GoogleAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
       {/* Top Header Bar */}
       <div className="flex items-center justify-between p-3.5 rounded-2xl duo-card bg-white border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3">
@@ -91,6 +99,35 @@ export default function HomeHubPage() {
 
       {/* Hero Mission Section */}
       <HeroMissionSection />
+
+      {/* Google Authenticator 2FA Banner Card */}
+      <div 
+        onClick={() => setAuthModalOpen(true)}
+        className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-950 text-white border border-slate-800 shadow-md flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-all group"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xs font-black text-white group-hover:text-emerald-400 transition-colors">
+                Google Authenticator 2FA
+              </span>
+              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950 uppercase">
+                Active
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+              Connected as {user?.email || "abhaykumawat@gmail.com"} • Click to Manage PIN
+            </p>
+          </div>
+        </div>
+
+        <div className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
+          <KeyRound className="w-4 h-4" />
+        </div>
+      </div>
 
       {/* UI/UX Theme Switcher */}
       <ThemeSwitcher />
