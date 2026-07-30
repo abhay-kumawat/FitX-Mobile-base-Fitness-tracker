@@ -174,31 +174,30 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
 
         {/* User Logged In Card if already active */}
         {isAuthenticated && user && !requires2FA && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
-                {user.name.charAt(0)}
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
+                  {user.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 flex items-center gap-1">
+                    {user.name}
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100" />
+                  </h4>
+                  <p className="text-[11px] text-slate-600 font-medium">{user.email}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 flex items-center gap-1">
-                  {user.name}
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100" />
-                </h4>
-                <p className="text-[11px] text-slate-600 font-medium">{user.email}</p>
-                <span className="inline-block mt-0.5 text-[9px] font-bold text-emerald-700 uppercase bg-white px-1.5 py-0.2 rounded border border-emerald-200">
-                  Google Authenticator Protected
-                </span>
-              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  soundscape.playTapSound();
+                }}
+                className="text-xs font-extrabold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 transition-colors"
+              >
+                Sign Out
+              </button>
             </div>
-            <button
-              onClick={() => {
-                logout();
-                soundscape.playTapSound();
-              }}
-              className="text-xs font-extrabold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 transition-colors"
-            >
-              Sign Out
-            </button>
           </div>
         )}
 

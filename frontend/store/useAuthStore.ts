@@ -17,7 +17,7 @@ interface AuthState {
   user: AuthUser | null;
   requires2FA: boolean;
   tempUser: AuthUser | null;
-  loginWithGoogle: (googleData: { email: string; name: string; avatar?: string }) => void;
+  loginWithGoogle: (googleData?: { email?: string; name?: string; avatar?: string }) => void;
   loginWithEmail: (email: string, name?: string) => void;
   verify2FA: (code: string) => boolean;
   enable2FA: () => void;
@@ -28,33 +28,24 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      isAuthenticated: true, // Default active demo user
-      user: {
-        id: "usr_google_10293",
-        name: "Abhay Kumawat",
-        email: "abhaykumawat@gmail.com",
-        avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c",
-        provider: "google",
-        google2faEnabled: true,
-        google2faVerified: true,
-        totpSecret: "JBSWY3DPEHPK3PXP",
-      },
+      isAuthenticated: false,
+      user: null,
       requires2FA: false,
       tempUser: null,
 
-      loginWithGoogle: ({ email, name, avatar }) => {
+      loginWithGoogle: (googleData) => {
         const newUser: AuthUser = {
           id: `usr_google_${Date.now()}`,
-          name: name || "Abhay Kumawat",
-          email: email || "abhaykumawat@gmail.com",
-          avatar: avatar || "https://lh3.googleusercontent.com/a/default-user=s96-c",
+          name: googleData?.name || "Abhay Kumawat",
+          email: googleData?.email || "abhaykumawat@gmail.com",
+          avatar: googleData?.avatar || "https://lh3.googleusercontent.com/a/default-user=s96-c",
           provider: "google",
           google2faEnabled: true,
           google2faVerified: false,
           totpSecret: "JBSWY3DPEHPK3PXP",
         };
 
-        // Trigger 2FA step if enabled
+        // Trigger 2FA verification step
         set({
           requires2FA: true,
           tempUser: newUser,
@@ -81,7 +72,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       verify2FA: (code: string) => {
-        // Accepts any 6-digit code or "123456" in demo mode
         const cleaned = code.trim();
         if (cleaned.length === 6) {
           const state = get();
@@ -127,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "fitx_auth_store",
+      name: "fitx_auth_store_v2",
     }
   )
 );
