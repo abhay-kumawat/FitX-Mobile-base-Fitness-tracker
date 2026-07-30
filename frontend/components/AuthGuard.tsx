@@ -51,7 +51,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
             Authentication Required
           </h2>
           <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-            Please sign in or create an account with Google Authenticator to access your fitness app features.
+            Please sign in or create an account to access your fitness app features.
           </p>
         </div>
 

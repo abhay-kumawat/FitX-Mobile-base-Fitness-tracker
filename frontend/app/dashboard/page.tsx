@@ -53,7 +53,7 @@ export default function HomeHubPage() {
   const activeQuests = (quests || []).slice(0, 3);
 
   const featureLaunchers = [
-    { name: "Website Landing Page", desc: "Showcase Hero, Google Auth 2FA & Pricing", href: "/", icon: Globe, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    { name: "Website Landing Page", desc: "Showcase Hero & Social Auth", href: "/", icon: Globe, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     { name: "Overload Workouts", desc: "Form Guard & Set Tracker", href: "/workout", icon: Dumbbell, color: "text-teal-600 bg-teal-50 border-teal-200" },
     { name: "HPE Recovery Sanctuary", desc: "180px HRV Ring & 4-7-8 Pacer", href: "/recovery", icon: Zap, color: "text-sky-600 bg-sky-50 border-sky-200" },
     { name: "Smart Meal & Todo Tracker", desc: "Todo Checklist, Scientific Macros & Hydration Engine", href: "/meal-planner", icon: Utensils, color: "text-amber-600 bg-amber-50 border-amber-200" },
@@ -100,35 +100,6 @@ export default function HomeHubPage() {
 
         {/* Hero Mission Section */}
         <HeroMissionSection />
-
-        {/* Google Authenticator 2FA Banner Card */}
-        <div 
-          onClick={() => setAuthModalOpen(true)}
-          className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-950 text-white border border-slate-800 shadow-md flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-all group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-black text-white group-hover:text-emerald-400 transition-colors">
-                  Google Authenticator 2FA
-                </span>
-                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950 uppercase">
-                  Active
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Connected as {user?.email || "abhaykumawat@gmail.com"} • Click to Manage PIN
-              </p>
-            </div>
-          </div>
-
-          <div className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
-            <KeyRound className="w-4 h-4" />
-          </div>
-        </div>
 
         {/* UI/UX Theme Switcher */}
         <ThemeSwitcher />

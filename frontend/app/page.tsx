@@ -237,7 +237,7 @@ export default function WebsiteLandingPage() {
 
           {/* Social Authentication Buttons */}
           <div className="space-y-2 w-full min-w-0">
-            {/* Continue with Google (triggers Google 2FA Modal) */}
+            {/* Continue with Google */}
             <button
               type="button"
               onClick={handleOpenAuthModal}

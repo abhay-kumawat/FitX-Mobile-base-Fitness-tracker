@@ -5,18 +5,13 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { 
   ShieldCheck, 
-  KeyRound, 
   X, 
   CheckCircle2, 
-  Lock, 
   Mail, 
   User, 
-  QrCode, 
-  Sparkles, 
+  Lock,
   ArrowRight,
-  RefreshCw,
-  Copy,
-  Check
+  RefreshCw
 } from "lucide-react";
 
 interface GoogleAuthModalProps {
@@ -28,45 +23,23 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
   const { 
     isAuthenticated, 
     user, 
-    requires2FA, 
     loginWithGoogle, 
     loginWithEmail, 
-    verify2FA, 
     logout 
   } = useAuthStore();
 
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"google" | "email" | "2fa">("google");
-  const [totpCode, setTotpCode] = useState(["", "", "", "", "", ""]);
   const [emailInput, setEmailInput] = useState("abhaykumawat@gmail.com");
   const [nameInput, setNameInput] = useState("Abhay Kumawat");
-  const [passwordInput, setPasswordInput] = useState("••••••••");
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(24);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Synchronize 2FA step if required
-  useEffect(() => {
-    if (requires2FA) {
-      setActiveTab("2fa");
-    }
-  }, [requires2FA]);
-
-  // 30-second TOTP Countdown Simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => (prev <= 1 ? 30 : prev - 1));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!isOpen || !mounted || typeof window === "undefined") return null;
+  if (!isOpen || !mounted) return null;
 
   const handleGoogleSignIn = () => {
     soundscape.playTapSound();
@@ -80,9 +53,13 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
         name: "Abhay Kumawat",
         avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c",
       });
-      setActiveTab("2fa");
-      soundscape.playSuccessSound();
-    }, 900);
+      soundscape.playVictoryFanfare();
+      setSuccessMessage("Signed in with Google!");
+      setTimeout(() => {
+        onClose();
+        setSuccessMessage("");
+      }, 700);
+    }, 700);
   };
 
   const handleEmailSignIn = (e: React.FormEvent) => {
@@ -94,61 +71,12 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
     }
     loginWithEmail(emailInput, nameInput);
     setSuccessMessage("Logged in successfully!");
-    soundscape.playSuccessSound();
+    soundscape.playVictoryFanfare();
     setTimeout(() => {
       onClose();
       setSuccessMessage("");
-    }, 800);
+    }, 700);
   };
-
-  const handleTotpChange = (index: number, val: string) => {
-    if (!/^\d*$/.test(val)) return;
-    const newCode = [...totpCode];
-    newCode[index] = val.slice(-1);
-    setTotpCode(newCode);
-
-    // Auto-advance focus
-    if (val && index < 5) {
-      const nextInput = document.getElementById(`totp-pin-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleVerify2FA = () => {
-    soundscape.playTapSound();
-    const fullCode = totpCode.join("");
-    if (fullCode.length < 6) {
-      setErrorMessage("Enter all 6 digits from Google Authenticator");
-      return;
-    }
-
-    setIsVerifying(true);
-    setErrorMessage("");
-
-    setTimeout(() => {
-      const success = verify2FA(fullCode);
-      setIsVerifying(false);
-      if (success) {
-        setSuccessMessage("Google Authenticator verified!");
-        soundscape.playVictoryFanfare();
-        setTimeout(() => {
-          onClose();
-          setSuccessMessage("");
-          setTotpCode(["", "", "", "", "", ""]);
-        }, 900);
-      } else {
-        setErrorMessage("Invalid code. Enter 123456 or any 6-digit code.");
-      }
-    }, 600);
-  };
-
-  const handleCopySecret = () => {
-    navigator.clipboard.writeText("JBSWY3DPEHPK3PXP");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!isOpen || !mounted) return null;
 
   return (
     <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-smooth-reveal">
@@ -167,20 +95,17 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-1.5">
+            <h3 className="text-base font-black text-slate-900">
               FitX Authentication
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                Google 2FA
-              </span>
             </h3>
             <p className="text-xs text-slate-500 font-semibold">
-              Secure single sign-on & Authenticator TOTP
+              Secure single sign-on with Google
             </p>
           </div>
         </div>
 
-        {/* User Logged In Card if already active */}
-        {isAuthenticated && user && !requires2FA && (
+        {/* User Logged In Card */}
+        {isAuthenticated && user ? (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -206,51 +131,9 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
               </button>
             </div>
           </div>
-        )}
-
-        {/* Tab Switcher */}
-        {!requires2FA && (
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => {
-                setActiveTab("google");
-                soundscape.playTapSound();
-              }}
-              className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
-                activeTab === "google"
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
-                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
-              </svg>
-              <span>Google Sign-In</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab("2fa");
-                soundscape.playTapSound();
-              }}
-              className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
-                activeTab === "2fa"
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Google 2FA PIN</span>
-            </button>
-          </div>
-        )}
-
-        {/* Tab 1: Google OAuth Direct Sign-In */}
-        {activeTab === "google" && !requires2FA && (
+        ) : (
           <div className="space-y-4 pt-1">
+            {/* Google OAuth 1-Click Button Card */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-emerald-50/50 border border-slate-200 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-white border border-slate-200 shadow-sm mx-auto flex items-center justify-center">
                 <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -265,7 +148,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
                   Instant Google Sign-In
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
-                  Authenticate securely using your Google Account with end-to-end encryption.
+                  Authenticate securely using your Google Account.
                 </p>
               </div>
 
@@ -278,17 +161,18 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
                 {isVerifying ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
-                    <span>Connecting to Google OAuth...</span>
+                    <span>Connecting to Google...</span>
                   </>
                 ) : (
                   <>
-                    <span>Sign Up / Continue with Google</span>
+                    <span>Continue with Google</span>
                     <ArrowRight className="w-4 h-4 text-emerald-400" />
                   </>
                 )}
               </button>
             </div>
 
+            {/* Divider */}
             <div className="relative flex items-center justify-center my-3">
               <div className="border-t border-slate-200 w-full" />
               <span className="bg-white px-3 text-[11px] font-bold text-slate-400 uppercase">
@@ -296,15 +180,17 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
               </span>
             </div>
 
+            {/* Email Form */}
             <form onSubmit={handleEmailSignIn} className="space-y-3">
               <div>
                 <label className="text-[11px] font-bold text-slate-600 block mb-1">Full Name</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="text"
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="Abhay Kumawat"
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -313,11 +199,13 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
               <div>
                 <label className="text-[11px] font-bold text-slate-600 block mb-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="email"
+                    required
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="abhaykumawat@gmail.com"
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -325,97 +213,11 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 transition-all active:scale-98"
+                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs shadow-md transition-all active:scale-98"
               >
                 Sign In with Email
               </button>
             </form>
-          </div>
-        )}
-
-        {/* Tab 2 / Step 2: Google Authenticator 2FA Code Input */}
-        {activeTab === "2fa" && (
-          <div className="space-y-4 pt-1">
-            <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-3 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <KeyRound className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
-                    Google Authenticator 2FA
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1 text-[11px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
-                  <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
-                  <span>{timerSeconds}s</span>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-300 font-medium">
-                Enter the 6-digit verification code from your **Google Authenticator** app.
-              </p>
-
-              {/* 6-Digit PIN Inputs */}
-              <div className="flex justify-between gap-1.5 py-1">
-                {totpCode.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    id={`totp-pin-${idx}`}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleTotpChange(idx, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && !digit && idx > 0) {
-                        const prev = document.getElementById(`totp-pin-${idx - 1}`);
-                        prev?.focus();
-                      }
-                    }}
-                    className="w-11 h-13 text-center text-lg font-mono font-black rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleVerify2FA}
-                disabled={isVerifying}
-                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/30 flex items-center justify-center space-x-2 transition-all active:scale-98"
-              >
-                {isVerifying ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>Verifying Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>Verify Authenticator PIN</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Secret key & Quick Demo Help */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-slate-700 flex items-center gap-1">
-                  <QrCode className="w-4 h-4 text-emerald-600" /> TOTP Secret Key:
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopySecret}
-                  className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                  {copied ? "Copied!" : "Copy Key"}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800">
-                <span>JBSWY3DPEHPK3PXP</span>
-                <span className="text-[10px] text-slate-400 font-sans">Demo PIN: 123456</span>
-              </div>
-            </div>
           </div>
         )}
 
