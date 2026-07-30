@@ -85,18 +85,21 @@ class MasterExercise(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
-    category = Column(String, nullable=False, index=True) # chest, back, shoulders, biceps, triceps, forearms, core, glutes, quads, hamstrings, calves, neck, cardio, mobility, olympic, powerlifting, rehab
+    aliases = Column(JSON, default=list) # Alternative names
+    category = Column(String, nullable=False, index=True) # chest, back, shoulders, etc.
     primary_muscle = Column(String, nullable=False, index=True)
     secondary_muscles = Column(JSON, default=list)
-    movement_pattern = Column(String, nullable=False) # push, pull, squat, hinge, lunge, carry, rotation, isolation
-    equipment = Column(String, nullable=False, index=True) # barbell, dumbbell, cable, machine, bodyweight, band, kettlebell, smith_machine
-    difficulty = Column(String, default="intermediate") # beginner, intermediate, advanced
+    movement_pattern = Column(String, nullable=False)
+    equipment = Column(String, nullable=False, index=True)
+    difficulty = Column(String, default="intermediate")
     skill_level = Column(String, default="general")
+    exercise_type = Column(String, default="hypertrophy") # strength, hypertrophy, endurance, power, mobility, warmup, cooldown
     video_url = Column(String, default="")
     animation_path = Column(String, default="")
     instructions = Column(JSON, default=list)
     common_mistakes = Column(JSON, default=list)
     safety_tips = Column(JSON, default=list)
+    breathing_technique = Column(String, default="Exhale on exertion, inhale on eccentric")
     alternatives = Column(JSON, default=list)
     progressions = Column(JSON, default=list)
     regressions = Column(JSON, default=list)
@@ -108,12 +111,19 @@ class MasterExercise(Base):
     tut_sec = Column(Integer, default=30)
     rom_notes = Column(String, default="Full extension to peak contraction")
     grip_variations = Column(JSON, default=list)
+    average_duration_sec = Column(Integer, default=60)
+    recommended_sets = Column(Integer, default=3)
+    recommended_reps = Column(String, default="8-12")
+    references = Column(JSON, default=list)
+    future_ai_metadata = Column(JSON, default=dict)
+    joint_stress = Column(JSON, default=list) # e.g. [{"joint": "shoulder", "level": "high"}]
 
 class WorkoutPlan(Base):
     __tablename__ = "workout_plans"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    master_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True) # TES linkage
     version = Column(Integer, default=1)
     name = Column(String, nullable=False)
     goal = Column(String, nullable=False)
@@ -142,6 +152,7 @@ class WorkoutSession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    temporal_event_id = Column(String(36), ForeignKey("temporal_events.id"), nullable=True, index=True) # TES linkage
     name = Column(String, nullable=False)
     status = Column(String, default="in_progress") # in_progress, completed, discarded
     start_time = Column(DateTime, default=datetime.utcnow)
@@ -680,3 +691,48 @@ class ReminderRule(Base):
 
 
 
+
+# =====================================================================
+# KNOWLEDGE LAYER MODELS (Shared across Workout and Nutrition)
+# =====================================================================
+
+class MuscleAtlas(Base):
+    __tablename__ = "muscle_atlas"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, unique=True, index=True, nullable=False)
+    group = Column(String, nullable=False) # e.g. Chest, Back, Legs
+    function = Column(String, nullable=False)
+    recovery_time_hours_avg = Column(Float, default=48.0)
+    description = Column(Text, default="")
+    image_url = Column(String, default="")
+
+class JointAtlas(Base):
+    __tablename__ = "joint_atlas"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, unique=True, index=True, nullable=False)
+    type = Column(String, nullable=False) # Hinge, Ball and Socket, etc.
+    description = Column(Text, default="")
+
+class InjuryKnowledgeNode(Base):
+    __tablename__ = "injury_knowledge_nodes"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, unique=True, index=True, nullable=False)
+    affected_region = Column(String, nullable=False) # Shoulder, Knee, etc.
+    conflicting_movements = Column(JSON, default=list) # e.g. ["overhead_press", "deep_squat"]
+    safe_alternatives = Column(JSON, default=list) # recommended safe movement patterns
+    description = Column(Text, default="")
+    recovery_guidelines = Column(Text, default="")
+
+class UserInjuryProfile(Base):
+    __tablename__ = "user_injury_profiles"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    injury_node_id = Column(String(64), ForeignKey("injury_knowledge_nodes.id"), nullable=False)
+    status = Column(String, default="active") # active, recovering, recovered
+    pain_level = Column(Integer, default=5) # 1-10
+    reported_at = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, default="")

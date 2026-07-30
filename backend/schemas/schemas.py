@@ -195,6 +195,7 @@ class MicroPromptOut(BaseModel):
 class MasterExerciseOut(BaseModel):
     id: int
     name: str
+    aliases: List[str] = []
     category: str
     primary_muscle: str
     secondary_muscles: List[str] = []
@@ -202,22 +203,75 @@ class MasterExerciseOut(BaseModel):
     equipment: str
     difficulty: str
     skill_level: str
+    exercise_type: str
     video_url: str = ""
     animation_path: str = ""
     instructions: List[str] = []
     common_mistakes: List[str] = []
     safety_tips: List[str] = []
+    breathing_technique: str
     alternatives: List[str] = []
     progressions: List[str] = []
     regressions: List[str] = []
     warmup_suggestions: List[str] = []
-    estimated_calories_per_min: float = 6.5
-    typical_rpe: float = 8.0
-    typical_rest_sec: int = 90
-    tempo: str = "2-0-1-0"
-    tut_sec: int = 30
+    estimated_calories_per_min: float
+    typical_rpe: float
+    typical_rest_sec: int
+    tempo: str
+    tut_sec: int
     rom_notes: str = ""
     grip_variations: List[str] = []
+    average_duration_sec: int
+    recommended_sets: int
+    recommended_reps: str
+    references: List[str] = []
+    joint_stress: List[Dict[str, str]] = []
+
+    class Config:
+        from_attributes = True
+
+# Knowledge Layer Schemas
+class MuscleAtlasOut(BaseModel):
+    id: str
+    name: str
+    group: str
+    function: str
+    recovery_time_hours_avg: float
+    description: str
+    image_url: str
+
+    class Config:
+        from_attributes = True
+
+class JointAtlasOut(BaseModel):
+    id: str
+    name: str
+    type: str
+    description: str
+
+    class Config:
+        from_attributes = True
+
+class InjuryKnowledgeNodeOut(BaseModel):
+    id: str
+    name: str
+    affected_region: str
+    conflicting_movements: List[str]
+    safe_alternatives: List[str]
+    description: str
+    recovery_guidelines: str
+
+    class Config:
+        from_attributes = True
+
+class UserInjuryProfileOut(BaseModel):
+    id: str
+    user_id: int
+    injury_node_id: str
+    status: str
+    pain_level: int
+    reported_at: datetime
+    notes: str
 
     class Config:
         from_attributes = True
@@ -266,6 +320,7 @@ class WorkoutSessionStartInput(BaseModel):
 class WorkoutSessionOut(BaseModel):
     id: int
     user_id: int
+    temporal_event_id: Optional[str] = None
     name: str
     status: str
     start_time: datetime

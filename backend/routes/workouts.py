@@ -7,21 +7,25 @@ from backend.core.dependencies import get_current_user
 from backend.models.models import User, WorkoutSession, PersonalRecord
 from backend.schemas.schemas import (
     WorkoutSessionStartInput, WorkoutSessionOut, LogSetInput,
-    PlateCalculatorOut, WarmupProtocolOut, WarmupSetItem
+    PlateCalculatorOut, WarmupProtocolOut, WarmupSetItem, MasterExerciseOut
 )
 from backend.services.workout_execution.engine import (
     start_new_workout_session, log_workout_set, complete_workout_session
 )
+from backend.services.workout_intelligence.injury_engine import get_safe_alternatives
+from backend.services.workout_intelligence.progression_engine import calculate_weekly_volume, get_recent_prs
+from backend.models.models import TemporalEvent, MasterExercise
 
 router = APIRouter(prefix="/workout", tags=["Intelligent Workout Engine"])
 
 @router.post("/start", response_model=WorkoutSessionOut)
 def start_session(
     inp: WorkoutSessionStartInput,
+    temporal_event_id: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    session = start_new_workout_session(db, current_user.id, inp.name)
+    session = start_new_workout_session(db, current_user.id, inp.name, temporal_event_id)
     return session
 
 @router.post("/log-set")
@@ -138,3 +142,48 @@ def get_warmup_protocol(
             WarmupSetItem(set_number=4, weight_kg=w3, reps=3, pct_working_weight=80.0),
         ]
     )
+
+@router.get("/intelligence/safe-alternatives", response_model=List[MasterExerciseOut])
+def safe_alternatives(
+    target_muscle: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Returns safe alternative exercises for a given muscle based on active injuries."""
+    safe_exs = get_safe_alternatives(db, current_user.id, target_muscle)
+    return safe_exs
+
+@router.get("/intelligence/progression-dashboard")
+def progression_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Returns summary of recent volume and PRs."""
+    vol = calculate_weekly_volume(db, current_user.id)
+    prs = get_recent_prs(db, current_user.id)
+    return {
+        "weekly_volume_kg": vol,
+        "recent_prs": prs
+    }
+
+@router.get("/exercises/search", response_model=List[MasterExerciseOut])
+def search_exercises(
+    query: Optional[str] = None,
+    muscle: Optional[str] = None,
+    equipment: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Production-grade exercise search with smart filtering."""
+    q = db.query(MasterExercise)
+    if query:
+        q = q.filter(MasterExercise.name.ilike(f"%{query}%"))
+    if muscle:
+        q = q.filter(MasterExercise.primary_muscle.ilike(f"%{muscle}%"))
+    if equipment:
+        q = q.filter(MasterExercise.equipment.ilike(f"%{equipment}%"))
+    if difficulty:
+        q = q.filter(MasterExercise.difficulty == difficulty)
+        
+    return q.limit(50).all()

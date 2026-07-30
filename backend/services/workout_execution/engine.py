@@ -1,11 +1,34 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from backend.models.models import WorkoutSession, WorkoutSet, PersonalRecord, MasterExercise
+from backend.models.models import WorkoutSession, WorkoutSet, PersonalRecord, MasterExercise, TemporalEvent
 
-def start_new_workout_session(db: Session, user_id: int, name: str) -> WorkoutSession:
+def start_new_workout_session(db: Session, user_id: int, name: str, temporal_event_id: Optional[str] = None) -> WorkoutSession:
+    if not temporal_event_id:
+        # Create an ad-hoc temporal event for this session
+        te = TemporalEvent(
+            user_id=user_id,
+            title=name,
+            category="workout",
+            event_type="session",
+            status="ACTIVE",
+            planned_start_at=datetime.utcnow(),
+            actual_start_at=datetime.utcnow(),
+            source="USER"
+        )
+        db.add(te)
+        db.flush()
+        temporal_event_id = te.id
+    else:
+        # Update existing scheduled event
+        te = db.query(TemporalEvent).filter(TemporalEvent.id == temporal_event_id).first()
+        if te:
+            te.status = "ACTIVE"
+            te.actual_start_at = datetime.utcnow()
+
     session = WorkoutSession(
         user_id=user_id,
+        temporal_event_id=temporal_event_id,
         name=name,
         status="in_progress",
         start_time=datetime.utcnow(),
@@ -151,6 +174,18 @@ def complete_workout_session(db: Session, user_id: int, session_id: int, notes: 
         duration = (session.end_time - session.start_time).total_seconds()
         session.duration_seconds = int(duration)
     session.notes = notes
+
+    if session.temporal_event_id:
+        te = db.query(TemporalEvent).filter(TemporalEvent.id == session.temporal_event_id).first()
+        if te:
+            te.status = "COMPLETED"
+            te.actual_end_at = session.end_time
+            te.duration_minutes = session.duration_seconds // 60
+            te.metadata_payload = {
+                "total_volume_kg": session.total_volume_kg,
+                "total_sets": session.total_sets_completed,
+                "calories_burned": session.calories_burned
+            }
 
     db.commit()
     db.refresh(session)
