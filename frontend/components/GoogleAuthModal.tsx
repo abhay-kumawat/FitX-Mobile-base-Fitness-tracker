@@ -282,7 +282,7 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
                   </>
                 ) : (
                   <>
-                    <span>Continue as Abhay Kumawat</span>
+                    <span>Sign Up / Continue with Google</span>
                     <ArrowRight className="w-4 h-4 text-emerald-400" />
                   </>
                 )}
