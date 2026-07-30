@@ -149,9 +149,11 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (!isOpen || !mounted) return null;
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-smooth-reveal">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 relative">
+    <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-smooth-reveal">
+      <div className="w-full max-w-sm sm:max-w-md bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 relative my-auto max-h-[85vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -433,7 +435,6 @@ export function GoogleAuthModal({ isOpen, onClose }: GoogleAuthModalProps) {
           </div>
         )}
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
