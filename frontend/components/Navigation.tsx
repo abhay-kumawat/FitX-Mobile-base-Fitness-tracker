@@ -103,6 +103,10 @@ export default function Navigation() {
     }
   };
 
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
     <>
       <ConfettiBurst trigger={streakConfetti} onComplete={() => setStreakConfetti(false)} />
