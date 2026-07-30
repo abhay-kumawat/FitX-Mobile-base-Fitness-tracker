@@ -136,65 +136,6 @@ export default function WebsiteLandingPage() {
     <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
       <GoogleAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
-      {/* Landing Header Bar with Sign Up & Sign In Buttons */}
-      <div className="flex items-center justify-between p-3.5 rounded-2xl duo-card bg-white border border-slate-200 shadow-sm">
-        <div className="flex items-center space-x-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/20">
-            F
-          </div>
-          <div>
-            <h2 className="text-xs font-black text-slate-900 leading-tight">FitX AI Platform</h2>
-            <span className="text-[10px] text-emerald-600 font-bold">Google Auth 2FA</span>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {isAuthenticated ? (
-            <>
-              <button
-                onClick={handleEnterApp}
-                className="py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Enter App</span>
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="py-1.5 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs flex items-center space-x-1 border border-rose-200 transition-all"
-                title="Sign Out of FitX"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-600" />
-                <span>Log Out</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleOpenAuth}
-                className="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs flex items-center space-x-1 border border-slate-200 transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5 text-slate-600" />
-                <span>Sign In</span>
-              </button>
-
-              <button
-                onClick={handleOpenAuth}
-                className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
-              >
-                <svg className="w-3 h-3 bg-white rounded-full p-0.2 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
-                  <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
-                </svg>
-                <span>Sign Up</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Main Website Hero Section */}
       <section className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl space-y-6">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
