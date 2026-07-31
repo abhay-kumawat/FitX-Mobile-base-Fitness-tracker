@@ -26,9 +26,10 @@ import {
   Ruler,
   Calendar,
   Activity,
-  Check
+  LogOut
 } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
+import { LogoutConfirmModal } from "@/components/auth/LogoutConfirmModal";
 
 export default function ProfilePage() {
   const { userProfile, loading, error, updateUserProfile, refetchUserProfile } = useAuthContext();
@@ -37,6 +38,7 @@ export default function ProfilePage() {
   const [mounted, setMounted] = useState(false);
   const [showSimulatorModal, setShowSimulatorModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Edit form state
@@ -426,7 +428,24 @@ export default function ProfilePage() {
           <Button3D variant="secondary" onClick={handleExportJSON} className="text-xs py-2.5">
             <Download className="w-4 h-4" /> Backup Profile Data (JSON)
           </Button3D>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundscape.playTapSound();
+              setShowLogoutModal(true);
+            }}
+            className="w-full py-2.5 px-4 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <LogOut className="w-4 h-4 text-rose-600" />
+            <span>Log Out Account</span>
+          </button>
         </div>
+
+        <LogoutConfirmModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+        />
 
         {/* Edit Profile Modal */}
         {showEditModal && (

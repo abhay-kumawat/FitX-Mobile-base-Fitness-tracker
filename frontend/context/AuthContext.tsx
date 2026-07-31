@@ -10,7 +10,8 @@ import {
   sendEmailVerification, 
   sendPasswordResetEmail, 
   signOut, 
-  updateProfile 
+  updateProfile,
+  reload
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
@@ -28,12 +29,25 @@ export interface UserDocument {
   weight?: number;
   fitnessGoal?: string;
   fitnessLevel?: string;
+  activityLevel?: string;
   level: number;
   xp: number;
   streak: number;
   hrvScore?: number;
   createdAt: string;
   lastLogin: string;
+}
+
+export function isProfileComplete(profile: UserDocument | null): boolean {
+  if (!profile) return false;
+  return Boolean(
+    profile.age &&
+    profile.gender &&
+    profile.height &&
+    profile.weight &&
+    profile.fitnessGoal &&
+    profile.fitnessLevel
+  );
 }
 
 interface AuthContextType {
@@ -47,6 +61,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
+  reloadUser: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserDocument>) => Promise<void>;
   refetchUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
@@ -116,8 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: fbUser.email || "",
           photoURL: fbUser.photoURL || "",
           level: 1,
-          xp: 100,
-          streak: 1,
+          xp: 0,
+          streak: 0,
           createdAt: nowIso,
           lastLogin: nowIso,
         };
@@ -135,8 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: fbUser.email || "",
         photoURL: fbUser.photoURL || "",
         level: 1,
-        xp: 100,
-        streak: 1,
+        xp: 0,
+        streak: 0,
         createdAt: nowIso,
         lastLogin: nowIso,
       };
@@ -184,6 +199,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Reload user object (used to check email verification status)
+  const reloadUser = async () => {
+    if (auth.currentUser) {
+      await reload(auth.currentUser);
+      setUser({ ...auth.currentUser });
+    }
+  };
+
   // Update User Profile in Firestore and State Immediately
   const updateUserProfile = async (updates: Partial<UserDocument>) => {
     if (!user || !userProfile) {
@@ -213,9 +236,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (err: any) {
       console.error("[updateUserProfile error]", err);
-      // Fallback: update state locally even if Firestore connection fails temporarily
+      // Fallback: update state locally even if Firestore connection fails
       setUserProfile(updatedProfile);
-      setError("Profile updated locally, but failed to sync to Firestore: " + formatAuthError(err));
+      setError("Profile updated locally: " + formatAuthError(err));
     }
   };
 
@@ -334,6 +357,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithEmail,
         sendPasswordReset,
         resendVerificationEmail,
+        reloadUser,
         updateUserProfile,
         refetchUserProfile,
         logout,
