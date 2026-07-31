@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuthContext, isProfileComplete } from "@/context/AuthContext";
 import { AuthFlowContainer } from "@/components/auth/AuthFlowContainer";
-import { soundscape } from "@/lib/soundscapeEngine";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -27,7 +26,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Rule 1: Not Authenticated -> Show Welcome / Auth Flow
-  if (!user || !isAuthenticated) {
+  if (!isAuthenticated && !userProfile && !user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-2 sm:p-4 animate-smooth-reveal">
         <AuthFlowContainer initialScreen="welcome" />
@@ -35,9 +34,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Rule 2: Unverified Email (for Email/Password accounts) -> Show Email Verification Screen
-  const isPasswordProvider = user.providerData[0]?.providerId === "password";
-  if (!user.emailVerified && isPasswordProvider) {
+  // Rule 2: Unverified Email (only for Firebase Email/Password accounts) -> Show Email Verification Screen
+  if (user && user.providerData[0]?.providerId === "password" && !user.emailVerified) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-2 sm:p-4 animate-smooth-reveal">
         <AuthFlowContainer initialScreen="verification" />
@@ -54,6 +52,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Rule 4: Fully Authenticated, Verified, & Profile Completed -> Grant Access
+  // Rule 4: Fully Authenticated -> Grant Access to App Pages
   return <>{children}</>;
 }

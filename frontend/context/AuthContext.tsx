@@ -201,6 +201,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName: nameStr || (emailStr ? emailStr.split("@")[0] : "Athlete User"),
       email: emailStr || "user@fitx.ai",
       photoURL: "",
+      age: 24,
+      gender: "Male",
+      height: 180,
+      weight: 75,
+      fitnessGoal: "Build Muscle",
+      fitnessLevel: "Intermediate",
+      activityLevel: "Moderately Active",
       level: 1,
       xp: 100,
       streak: 1,
@@ -212,6 +219,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncAuthStore.loginWithEmail(demoProfile.email, demoProfile.fullName);
     syncUserStore.updateProfile({
       name: demoProfile.fullName,
+      fitnessLevel: "Intermediate",
+      primaryGoal: "Build Muscle",
+      weightKg: 75,
+      heightCm: 180,
     });
     setLoading(false);
   };

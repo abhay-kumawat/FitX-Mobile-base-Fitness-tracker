@@ -144,11 +144,14 @@ export function AuthFlowContainer({
     try {
       await loginWithGoogle();
       soundscape.playVictoryFanfare();
+      if (onSuccess) onSuccess();
+      else router.push("/dashboard");
     } catch (err: any) {
       console.warn("[Firebase Google Auth Fallback to Local Mode]", err);
       loginLocalDemo(email || "google.user@fitx.ai", fullName || "Google Athlete");
       soundscape.playVictoryFanfare();
-      setSuccessMsg("Signed in successfully!");
+      if (onSuccess) onSuccess();
+      else router.push("/dashboard");
     } finally {
       setSubmitting(false);
     }
@@ -165,11 +168,14 @@ export function AuthFlowContainer({
     try {
       await loginWithEmail(email, password);
       soundscape.playVictoryFanfare();
+      if (onSuccess) onSuccess();
+      else router.push("/dashboard");
     } catch (err: any) {
       console.warn("[Firebase Email Login Fallback to Local Mode]", err);
       loginLocalDemo(email, fullName || email.split("@")[0]);
       soundscape.playVictoryFanfare();
-      setSuccessMsg("Signed in successfully!");
+      if (onSuccess) onSuccess();
+      else router.push("/dashboard");
     } finally {
       setSubmitting(false);
     }
@@ -191,7 +197,8 @@ export function AuthFlowContainer({
       console.warn("[Firebase Email Signup Fallback to Local Mode]", err);
       loginLocalDemo(email, fullName);
       soundscape.playVictoryFanfare();
-      setSuccessMsg("Account created successfully!");
+      if (onSuccess) onSuccess();
+      else router.push("/dashboard");
     } finally {
       setSubmitting(false);
     }
