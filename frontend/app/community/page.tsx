@@ -16,6 +16,7 @@ import ConfettiBurst from "@/components/ConfettiBurst";
 import { PillBadge } from "@/components/atomic/PillBadge";
 import { Button3D } from "@/components/atomic/Button3D";
 import { soundscape } from "@/lib/soundscapeEngine";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function CommunityPage() {
   const [kudosGiven, setKudosGiven] = useState<Record<number, number>>({ 1: 14, 2: 9, 3: 21 });
@@ -37,16 +38,19 @@ export default function CommunityPage() {
     setXpConfetti(true);
   };
 
+  const { userProfile } = useAuthContext();
+  const currentUserName = userProfile?.fullName ? `${userProfile.fullName} (You)` : "You";
+
   const globalLeaderboards = [
-    { rank: 1, name: "Alex Rivera", xp: 9850, volume: "24.5k kg", streak: "28d 🔥", badge: "🥇 Alpha Athlete" },
+    { rank: 1, name: "Jordan Miller", xp: 9850, volume: "24.5k kg", streak: "28d 🔥", badge: "🥇 Alpha Athlete" },
     { rank: 2, name: "Sarah Chen", xp: 8420, volume: "19.2k kg", streak: "19d 🔥", badge: "🥈 Squat Queen" },
-    { rank: 3, name: "You (FitX Athlete)", xp: 4450, volume: "14.5k kg", streak: "12d 🔥", badge: "🥉 Iron Titan" },
+    { rank: 3, name: currentUserName, xp: userProfile?.xp || 4450, volume: "14.5k kg", streak: `${userProfile?.streak || 12}d 🔥`, badge: "🥉 Iron Titan" },
     { rank: 4, name: "Marcus Vance", xp: 3900, volume: "12.8k kg", streak: "8d 🔥", badge: "Hypertrophy Beast" },
     { rank: 5, name: "Elena Rostova", xp: 3100, volume: "11.0k kg", streak: "5d 🔥", badge: "Consistent Lifter" },
   ];
 
   const friendsLeaderboards = [
-    { rank: 1, name: "You (FitX Athlete)", xp: 4450, volume: "14.5k kg", streak: "12d 🔥", badge: "🥇 Iron Titan" },
+    { rank: 1, name: currentUserName, xp: userProfile?.xp || 4450, volume: "14.5k kg", streak: `${userProfile?.streak || 12}d 🔥`, badge: "🥇 Iron Titan" },
     { rank: 2, name: "Marcus Vance", xp: 3900, volume: "12.8k kg", streak: "8d 🔥", badge: "🥈 Hypertrophy Beast" },
     { rank: 3, name: "Elena Rostova", xp: 3100, volume: "11.0k kg", streak: "5d 🔥", badge: "🥉 Consistent Lifter" },
   ];
@@ -71,7 +75,7 @@ export default function CommunityPage() {
     },
     {
       id: 2,
-      author: "Alex Rivera",
+      author: "Jordan Miller",
       type: "Workout Completed",
       title: "Hypertrophy Push Session Complete 💥",
       content: "18 total working sets in 52 minutes. Target chest & shoulder volume reached.",

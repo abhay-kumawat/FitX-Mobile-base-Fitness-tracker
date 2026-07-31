@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { MessageSquare, Send, Mic, Sparkles, CheckCircle2 } from "lucide-react";
 import { fitxAPI } from "@/lib/api";
 
+import { useAuthContext } from "@/context/AuthContext";
+
 interface SuggestedAction {
   label: string;
   action_type: string;
@@ -16,10 +18,13 @@ interface ChatMessageItem {
 }
 
 export default function CoachChatWindow() {
+  const { userProfile } = useAuthContext();
+  const userName = userProfile?.fullName ? userProfile.fullName.split(" ")[0] : "Athlete";
+
   const [messages, setMessages] = useState<ChatMessageItem[]>([
     {
       sender: "coach",
-      text: "Hello Alex! I am your FitX Gemini AI Coach. Your readiness score today is 88 (Optimal). How can I fine-tune your workout or nutrition plan right now?",
+      text: `Hello ${userName}! I am your FitX Gemini AI Coach. Your readiness score today is 88 (Optimal). How can I fine-tune your workout or nutrition plan right now?`,
       suggestedActions: [
         { label: "Lower Load (-10%)", action_type: "modify_load" },
         { label: "Log +500ml Water", action_type: "add_water" }

@@ -26,9 +26,9 @@ export const useAuthStore = create<AuthState>()(
       loginWithGoogle: (googleData) => {
         const newUser: AuthUser = {
           id: `usr_google_${Date.now()}`,
-          name: googleData?.name || "Abhay Kumawat",
-          email: googleData?.email || "abhaykumawat@gmail.com",
-          avatar: googleData?.avatar || "https://lh3.googleusercontent.com/a/default-user=s96-c",
+          name: googleData?.name || googleData?.email?.split("@")[0] || "User",
+          email: googleData?.email || "",
+          avatar: googleData?.avatar || "",
           provider: "google",
         };
 
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
       loginWithEmail: (email, name) => {
         const newUser: AuthUser = {
           id: `usr_email_${Date.now()}`,
-          name: name || email.split("@")[0],
+          name: name || email.split("@")[0] || "User",
           email: email,
           avatar: undefined,
           provider: "email",
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "fitx_auth_store_v3",
+      name: "fitx_auth_store_v5",
     }
   )
 );

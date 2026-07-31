@@ -28,7 +28,7 @@ import {
 import ConfettiBurst from "./ConfettiBurst";
 import { soundscape } from "@/lib/soundscapeEngine";
 import { GoogleAuthModal } from "./GoogleAuthModal";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -37,7 +37,7 @@ export default function Navigation() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, userProfile, logout } = useAuthContext();
 
   const navItems = [
     { label: "Home", href: "/dashboard", icon: Home },
@@ -107,6 +107,10 @@ export default function Navigation() {
     return null;
   }
 
+  const displayName = userProfile?.fullName ? userProfile.fullName.split(" ")[0] : "Account";
+  const displayLevel = userProfile?.level || 1;
+  const displayStreak = userProfile?.streak || 1;
+
   return (
     <>
       <ConfettiBurst trigger={streakConfetti} onComplete={() => setStreakConfetti(false)} />
@@ -169,12 +173,12 @@ export default function Navigation() {
         </div>
       )}
 
-      {/* Top Crisp Light Header Bar */}
+      {/* Top Header Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl h-13 flex items-center justify-between mx-auto w-full max-w-full shadow-xs px-3.5 py-2 mb-4 shrink-0 mt-2">
         <div className="flex items-center space-x-2 shrink-0">
           <Link href="/skill-tree" onClick={(e) => handleNavClick(e, "/skill-tree")} className="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full hover:scale-105 transition-transform">
             <Crown className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] font-black text-amber-600">Lvl 5</span>
+            <span className="text-[11px] font-black text-amber-600">Lvl {displayLevel}</span>
             <div className="w-10 h-1.5 bg-slate-200 rounded-full overflow-hidden ml-1">
               <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full w-[65%]" />
             </div>
@@ -182,23 +186,28 @@ export default function Navigation() {
         </div>
 
         <div className="flex items-center space-x-1.5 shrink-0">
-          {/* Google Auth Trigger Button */}
+          {/* Auth Trigger Button */}
           <button
             onClick={() => {
               soundscape.playTapSound();
-              setAuthModalOpen(true);
+              if (!isAuthenticated) setAuthModalOpen(true);
+              else router.push("/profile");
             }}
             className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all border border-slate-700 shadow-xs"
-            title="Google Sign-In"
+            title="User Profile"
           >
-            <svg className="w-3 h-3 bg-white rounded-full p-0.2 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
-              <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
-              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
-            </svg>
-            <span className="text-[10px] font-black tracking-tight text-emerald-400">
-              {isAuthenticated ? "Abhay" : "Google Sign-In"}
+            {userProfile?.photoURL ? (
+              <img src={userProfile.photoURL} alt={displayName} className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+            ) : (
+              <svg className="w-3 h-3 bg-white rounded-full p-0.2 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
+              </svg>
+            )}
+            <span className="text-[10px] font-black tracking-tight text-emerald-400 max-w-[80px] truncate">
+              {isAuthenticated ? displayName : "Sign-In"}
             </span>
           </button>
 
@@ -226,15 +235,15 @@ export default function Navigation() {
           <button
             onClick={handleStreakTap}
             className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 hover:bg-amber-500/25 transition-all"
-            title="12 Day Streak!"
+            title={`${displayStreak} Day Streak!`}
           >
             <Flame className="w-3.5 h-3.5 fill-current animate-pulse text-amber-500" />
-            <span className="text-[11px] font-black">12d</span>
+            <span className="text-[11px] font-black">{displayStreak}d</span>
           </button>
         </div>
       </header>
 
-      {/* Floating Crisp Glass Dock Bottom Navigation */}
+      {/* Floating Glass Dock Bottom Navigation */}
       <nav 
         className="fixed left-2 right-2 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 min-h-[58px] py-1 px-1.5 flex justify-between items-center w-[calc(100%-1rem)] max-w-[420px] mx-auto rounded-full shadow-lg shadow-slate-900/10"
         style={{ bottom: "calc(var(--safe-area-bottom, 0px) + 12px)" }}
@@ -268,4 +277,3 @@ export default function Navigation() {
     </>
   );
 }
-

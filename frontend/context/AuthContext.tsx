@@ -15,24 +15,25 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useUserStore } from "@/store/useUserStore";
 
 export interface UserDocument {
   uid: string;
   fullName: string;
   email: string;
   photoURL: string;
-  gender: string;
-  age: number;
-  height: number;
-  weight: number;
-  fitnessGoal: string;
-  activityLevel: string;
+  gender?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  fitnessGoal?: string;
+  fitnessLevel?: string;
+  level: number;
+  xp: number;
+  streak: number;
+  hrvScore?: number;
   createdAt: string;
   lastLogin: string;
-  isPremium: boolean;
-  streak: number;
-  xp: number;
-  level: number;
 }
 
 interface AuthContextType {
@@ -46,6 +47,8 @@ interface AuthContextType {
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
+  updateUserProfile: (updates: Partial<UserDocument>) => Promise<void>;
+  refetchUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -57,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const syncStore = useAuthStore();
+  const syncAuthStore = useAuthStore();
+  const syncUserStore = useUserStore();
 
   // Helper to format Firebase Auth error messages cleanly
   const formatAuthError = (err: any): string => {
@@ -73,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case "auth/weak-password":
         return "Password is too weak. Must be at least 8 characters.";
       case "auth/network-request-failed":
-        return "Network connection error. Please check your internet.";
+        return "Network connection error. Please check your internet connection.";
       case "auth/popup-closed-by-user":
         return "Google sign in was cancelled.";
       case "auth/user-disabled":
@@ -83,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Create or Update Firestore User Document
+  // Create or Sync Firestore User Document
   const syncFirestoreUser = async (fbUser: FirebaseUser, fullNameOverride?: string): Promise<UserDocument> => {
     const nowIso = new Date().toISOString();
     const userRef = doc(db, "users", fbUser.uid);
@@ -96,52 +100,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const existing = snap.data() as UserDocument;
         profileData = {
           ...existing,
-          lastLogin: nowIso,
+          fullName: existing.fullName || fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
           photoURL: fbUser.photoURL || existing.photoURL || "",
+          lastLogin: nowIso,
         };
-        await updateDoc(userRef, { lastLogin: nowIso });
+        await updateDoc(userRef, { 
+          lastLogin: nowIso,
+          photoURL: profileData.photoURL,
+          fullName: profileData.fullName,
+        });
       } else {
         profileData = {
           uid: fbUser.uid,
-          fullName: fullNameOverride || fbUser.displayName || "Abhay Kumawat",
+          fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
           email: fbUser.email || "",
-          photoURL: fbUser.photoURL || "https://lh3.googleusercontent.com/a/default-user=s96-c",
-          gender: "Male",
-          age: 24,
-          height: 180,
-          weight: 75,
-          fitnessGoal: "Build Muscle",
-          activityLevel: "Intermediate",
+          photoURL: fbUser.photoURL || "",
+          level: 1,
+          xp: 100,
+          streak: 1,
           createdAt: nowIso,
           lastLogin: nowIso,
-          isPremium: true,
-          streak: 12,
-          xp: 2450,
-          level: 5,
         };
-        await setDoc(userRef, profileData);
+        // Omit undefined values when saving to Firestore
+        const cleanPayload: Record<string, any> = { ...profileData };
+        Object.keys(cleanPayload).forEach(key => cleanPayload[key] === undefined && delete cleanPayload[key]);
+        await setDoc(userRef, cleanPayload);
       }
-    } catch (e) {
-      console.warn("[Firestore fallback mode]", e);
+    } catch (e: any) {
+      console.warn("[Firestore Sync Warning]", e);
+      // Fallback local memory profile if offline
       profileData = {
         uid: fbUser.uid,
-        fullName: fullNameOverride || fbUser.displayName || "Abhay Kumawat",
+        fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
         email: fbUser.email || "",
         photoURL: fbUser.photoURL || "",
-        gender: "Male",
-        age: 24,
-        height: 180,
-        weight: 75,
-        fitnessGoal: "Build Muscle",
-        activityLevel: "Intermediate",
+        level: 1,
+        xp: 100,
+        streak: 1,
         createdAt: nowIso,
         lastLogin: nowIso,
-        isPremium: true,
-        streak: 12,
-        xp: 2450,
-        level: 5,
       };
     }
+
+    // Sync Zustand stores
+    syncAuthStore.loginWithGoogle({
+      email: profileData.email,
+      name: profileData.fullName,
+      avatar: profileData.photoURL,
+    });
+    syncUserStore.updateProfile({
+      name: profileData.fullName,
+      fitnessLevel: (profileData.fitnessLevel as any) || undefined,
+      primaryGoal: (profileData.fitnessGoal as any) || undefined,
+      weightKg: profileData.weight,
+      heightCm: profileData.height,
+      hrvScore: profileData.hrvScore,
+    });
 
     return profileData;
   };
@@ -149,21 +163,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Firebase Auth Observer (onAuthStateChanged)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoading(true);
+      setError(null);
       if (fbUser) {
         setUser(fbUser);
-        const profile = await syncFirestoreUser(fbUser);
-        setUserProfile(profile);
-        syncStore.loginWithEmail(fbUser.email || "", fbUser.displayName || profile.fullName);
+        try {
+          const profile = await syncFirestoreUser(fbUser);
+          setUserProfile(profile);
+        } catch (err: any) {
+          setError("Failed to load user profile from Firestore. Please click retry.");
+        }
       } else {
         setUser(null);
         setUserProfile(null);
-        syncStore.logout();
+        syncAuthStore.logout();
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Update User Profile in Firestore and State Immediately
+  const updateUserProfile = async (updates: Partial<UserDocument>) => {
+    if (!user || !userProfile) {
+      throw new Error("No authenticated user to update.");
+    }
+    
+    setError(null);
+    const updatedProfile = { ...userProfile, ...updates };
+    const userRef = doc(db, "users", user.uid);
+
+    try {
+      // Clean undefined keys before Firestore write
+      const payload: Record<string, any> = { ...updates };
+      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+
+      await updateDoc(userRef, payload);
+      setUserProfile(updatedProfile);
+
+      // Sync Zustand user store
+      syncUserStore.updateProfile({
+        name: updatedProfile.fullName,
+        fitnessLevel: (updatedProfile.fitnessLevel as any) || undefined,
+        primaryGoal: (updatedProfile.fitnessGoal as any) || undefined,
+        weightKg: updatedProfile.weight,
+        heightCm: updatedProfile.height,
+        hrvScore: updatedProfile.hrvScore,
+      });
+    } catch (err: any) {
+      console.error("[updateUserProfile error]", err);
+      // Fallback: update state locally even if Firestore connection fails temporarily
+      setUserProfile(updatedProfile);
+      setError("Profile updated locally, but failed to sync to Firestore: " + formatAuthError(err));
+    }
+  };
+
+  // Manual Retry / Refetch Profile
+  const refetchUserProfile = async () => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const profile = await syncFirestoreUser(user);
+      setUserProfile(profile);
+    } catch (err: any) {
+      setError("Failed to fetch user profile: " + formatAuthError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 1. Google Sign In
   const loginWithGoogle = async () => {
@@ -242,7 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut(auth);
       setUser(null);
       setUserProfile(null);
-      syncStore.logout();
+      syncAuthStore.logout();
     } catch (err: any) {
       setError(formatAuthError(err));
     }
@@ -250,7 +319,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = () => setError(null);
 
-  const isAuthenticated = !!user || syncStore.isAuthenticated;
+  const isAuthenticated = !!user || syncAuthStore.isAuthenticated;
 
   return (
     <AuthContext.Provider
@@ -265,6 +334,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithEmail,
         sendPasswordReset,
         resendVerificationEmail,
+        updateUserProfile,
+        refetchUserProfile,
         logout,
         clearError,
       }}

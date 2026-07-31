@@ -8,7 +8,7 @@ import { QuestRow } from "@/components/atomic/QuestRow";
 import { PillBadge } from "@/components/atomic/PillBadge";
 import { ProgressBar } from "@/components/atomic/ProgressBar";
 import { GoogleAuthModal } from "@/components/GoogleAuthModal";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthContext } from "@/context/AuthContext";
 import Link from "next/link";
 import { 
   Flame, 
@@ -26,15 +26,20 @@ import {
   Zap,
   Globe,
   ShieldCheck,
-  KeyRound
+  KeyRound,
+  Dumbbell
 } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
 
 export default function HomeHubPage() {
-  const { level = 5, xp = 2450, streakDays = 12, quests = [] } = useGamificationStore();
-  const { user } = useAuthStore();
+  const { userProfile } = useAuthContext();
+  const { level: storeLevel = 1, xp: storeXp = 100, streakDays: storeStreak = 1, quests = [] } = useGamificationStore();
   const [mounted, setMounted] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const level = userProfile?.level || storeLevel;
+  const xp = userProfile?.xp || storeXp;
+  const streakDays = userProfile?.streak || storeStreak;
 
   useEffect(() => {
     setMounted(true);
