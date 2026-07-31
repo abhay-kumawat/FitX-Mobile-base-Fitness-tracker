@@ -80,10 +80,10 @@ export function AuthFlowContainer({
 
   // Profile Completion Form State
   const [profileForm, setProfileForm] = useState({
-    age: "",
+    age: "24",
     gender: "Male",
-    height: "",
-    weight: "",
+    height: "178",
+    weight: "72.5",
     fitnessGoal: "Build Muscle",
     fitnessLevel: "Intermediate",
     activityLevel: "Moderately Active",
@@ -280,23 +280,26 @@ export function AuthFlowContainer({
     try {
       await updateUserProfile({
         age: profileForm.age ? Number(profileForm.age) : 24,
-        gender: profileForm.gender,
-        height: profileForm.height ? Number(profileForm.height) : 175,
-        weight: profileForm.weight ? Number(profileForm.weight) : 70,
-        fitnessGoal: profileForm.fitnessGoal,
-        fitnessLevel: profileForm.fitnessLevel,
-        activityLevel: profileForm.activityLevel,
+        gender: profileForm.gender || "Male",
+        height: profileForm.height ? Number(profileForm.height) : 178,
+        weight: profileForm.weight ? Number(profileForm.weight) : 72.5,
+        fitnessGoal: profileForm.fitnessGoal || "Build Muscle",
+        fitnessLevel: profileForm.fitnessLevel || "Intermediate",
+        activityLevel: profileForm.activityLevel || "Moderately Active",
       });
       soundscape.playVictoryFanfare();
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push("/dashboard");
+      if (onSuccess) onSuccess();
+      router.push("/dashboard");
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
       }
     } catch (err: any) {
       console.error(err);
       if (onSuccess) onSuccess();
-      else router.push("/dashboard");
+      router.push("/dashboard");
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      }
     } finally {
       setSubmitting(false);
     }

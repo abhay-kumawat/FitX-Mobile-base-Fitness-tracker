@@ -106,7 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return "Google sign-in popup was blocked by browser. Please allow popups or use email sign in.";
     }
 
-    // For Firebase API key or unconfigured domain errors, return null so local mode activates silently
     if (
       code === "auth/invalid-api-key" || 
       code === "auth/api-key-not-valid" || 
@@ -136,12 +135,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...existing,
           fullName: existing.fullName || fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
           photoURL: fbUser.photoURL || existing.photoURL || "",
+          age: existing.age || 24,
+          gender: existing.gender || "Male",
+          height: existing.height || 180,
+          weight: existing.weight || 75,
+          fitnessGoal: existing.fitnessGoal || "Build Muscle",
+          fitnessLevel: existing.fitnessLevel || "Intermediate",
+          activityLevel: existing.activityLevel || "Moderately Active",
           lastLogin: nowIso,
         };
         await updateDoc(userRef, { 
           lastLogin: nowIso,
           photoURL: profileData.photoURL,
           fullName: profileData.fullName,
+          age: profileData.age,
+          gender: profileData.gender,
+          height: profileData.height,
+          weight: profileData.weight,
+          fitnessGoal: profileData.fitnessGoal,
+          fitnessLevel: profileData.fitnessLevel,
+          activityLevel: profileData.activityLevel,
         });
       } else {
         profileData = {
@@ -149,6 +162,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
           email: fbUser.email || "",
           photoURL: fbUser.photoURL || "",
+          age: 24,
+          gender: "Male",
+          height: 180,
+          weight: 75,
+          fitnessGoal: "Build Muscle",
+          fitnessLevel: "Intermediate",
+          activityLevel: "Moderately Active",
           level: 1,
           xp: 100,
           streak: 1,
@@ -166,6 +186,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
         email: fbUser.email || "",
         photoURL: fbUser.photoURL || "",
+        age: 24,
+        gender: "Male",
+        height: 180,
+        weight: 75,
+        fitnessGoal: "Build Muscle",
+        fitnessLevel: "Intermediate",
+        activityLevel: "Moderately Active",
         level: 1,
         xp: 100,
         streak: 1,
@@ -182,10 +209,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     syncUserStore.updateProfile({
       name: profileData.fullName,
-      fitnessLevel: (profileData.fitnessLevel as any) || undefined,
-      primaryGoal: (profileData.fitnessGoal as any) || undefined,
-      weightKg: profileData.weight,
-      heightCm: profileData.height,
+      fitnessLevel: (profileData.fitnessLevel as any) || "Intermediate",
+      primaryGoal: (profileData.fitnessGoal as any) || "Build Muscle",
+      weightKg: profileData.weight || 75,
+      heightCm: profileData.height || 180,
       hrvScore: profileData.hrvScore,
     });
 
@@ -265,12 +292,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update User Profile in Firestore and State Immediately
   const updateUserProfile = async (updates: Partial<UserDocument>) => {
     const currentUid = user?.uid || userProfile?.uid;
-    if (!currentUid || !userProfile) {
-      throw new Error("No active user profile to update.");
-    }
     
     setError(null);
-    const updatedProfile = { ...userProfile, ...updates };
+    const updatedProfile = { 
+      ...(userProfile || {
+        uid: currentUid || `usr_${Date.now()}`,
+        fullName: "Athlete User",
+        email: "user@fitx.ai",
+        photoURL: "",
+        level: 1,
+        xp: 100,
+        streak: 1,
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+      }), 
+      ...updates 
+    };
 
     try {
       if (user) {
