@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Send, Mic, Sparkles, CheckCircle2 } from "lucide-react";
+import { Send, Mic, Sparkles, CheckCircle2 } from "lucide-react";
 import { fitxAPI } from "@/lib/api";
-
 import { useAuthContext } from "@/context/AuthContext";
 
 interface SuggestedAction {
@@ -19,7 +18,10 @@ interface ChatMessageItem {
 
 export default function CoachChatWindow() {
   const { userProfile } = useAuthContext();
-  const userName = userProfile?.fullName ? userProfile.fullName.split(" ")[0] : "Athlete";
+  const rawName = userProfile?.fullName ? userProfile.fullName.split(" ")[0] : "Athlete";
+  const userName = (!rawName || rawName.toLowerCase() === "google" || rawName.toLowerCase() === "demo") 
+    ? "Athlete" 
+    : rawName;
 
   const [messages, setMessages] = useState<ChatMessageItem[]>([
     {
@@ -65,17 +67,17 @@ export default function CoachChatWindow() {
   };
 
   return (
-    <div className="glass-card rounded-[24px] p-4 flex flex-col h-[500px] max-h-[75vh] w-full min-w-0 max-w-full overflow-hidden border-fitx-borderSubtle relative bg-gradient-to-b from-[#161616] to-[#101010] shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-fitx-borderSubtle shrink-0">
+    <div className="rounded-3xl p-4 flex flex-col h-full w-full min-w-0 max-w-full overflow-hidden relative bg-slate-900 text-slate-100 border border-slate-800 shadow-2xl">
+      {/* Sub Header inside Chat Window */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
         <div className="flex items-center space-x-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-fitx-gold to-fitx-purpleGlow flex items-center justify-center text-black shadow-md shadow-fitx-gold/25 shrink-0">
-            <Sparkles className="w-5 h-5 fill-black" />
+          <div className="w-8 h-8 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-extrabold text-white truncate">Gemini AI Coach</h3>
-            <p className="text-[10px] text-fitx-neonGreen font-bold flex items-center truncate">
-              <span className="w-1.5 h-1.5 rounded-full bg-fitx-neonGreen mr-1.5 animate-pulse shrink-0" /> Realtime Form & Strategy
+            <h3 className="text-xs font-black text-white truncate tracking-tight">Gemini AI Coach</h3>
+            <p className="text-[10px] text-emerald-400 font-bold flex items-center truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse shrink-0" /> Realtime Form & Strategy
             </p>
           </div>
         </div>
@@ -89,10 +91,10 @@ export default function CoachChatWindow() {
             className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed break-words ${
+              className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed break-words shadow-xs ${
                 m.sender === "user"
-                  ? "gold-gradient-btn text-black font-extrabold rounded-br-none shadow-md"
-                  : "bg-[#101010] border border-fitx-borderSubtle text-gray-200 rounded-bl-none font-medium"
+                  ? "bg-emerald-500 text-slate-950 font-black rounded-tr-xs"
+                  : "bg-slate-800 border border-slate-700/80 text-slate-100 rounded-tl-xs font-medium"
               }`}
             >
               {m.text}
@@ -110,9 +112,9 @@ export default function CoachChatWindow() {
                         { sender: "coach", text: `Applied ${act.label} to your live workout session!` }
                       ]);
                     }}
-                    className="px-2.5 py-1 rounded-full bg-fitx-gold/15 border border-fitx-gold/30 text-fitx-gold text-[10px] font-extrabold flex items-center hover:bg-fitx-gold/25 transition-all touch-target"
+                    className="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-extrabold flex items-center hover:bg-amber-500/25 transition-all active:scale-98"
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> {act.label}
+                    <CheckCircle2 className="w-3 h-3 mr-1 text-amber-400" /> {act.label}
                   </button>
                 ))}
               </div>
@@ -120,19 +122,19 @@ export default function CoachChatWindow() {
           </div>
         ))}
         {isTyping && (
-          <div className="text-xs text-fitx-gold italic flex items-center">
-            <Sparkles className="w-3.5 h-3.5 mr-1 text-fitx-gold animate-spin" /> Gemini AI Coach is analyzing...
+          <div className="text-xs text-emerald-400 italic flex items-center">
+            <Sparkles className="w-3.5 h-3.5 mr-1 text-emerald-400 animate-spin" /> Gemini AI Coach is analyzing...
           </div>
         )}
       </div>
 
       {/* Input Form */}
-      <div className="pt-2 border-t border-fitx-borderSubtle flex items-center space-x-2">
+      <div className="pt-2 border-t border-slate-800 flex items-center space-x-2 shrink-0">
         <button
           type="button"
           onClick={() => setInputMsg("I have mild shoulder tightness today.")}
-          className="p-2.5 rounded-xl bg-[#101010] border border-fitx-borderSubtle text-fitx-gold hover:border-fitx-gold touch-target"
-          title="Quick Voice Note Preset"
+          className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 hover:border-emerald-500 transition-colors"
+          title="Quick Preset"
         >
           <Mic className="w-4 h-4" />
         </button>
@@ -142,14 +144,14 @@ export default function CoachChatWindow() {
           onChange={(e) => setInputMsg(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Ask AI Coach anything..."
-          className="flex-1 bg-[#101010] border border-fitx-borderSubtle rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-fitx-textSecondary focus:outline-none focus:border-fitx-gold touch-target"
+          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors font-medium"
         />
         <button
           type="button"
           onClick={handleSend}
-          className="p-2.5 rounded-xl gold-gradient-btn touch-target flex items-center justify-center"
+          className="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 transition-colors flex items-center justify-center shadow-md shadow-emerald-500/20"
         >
-          <Send className="w-4 h-4 fill-black" />
+          <Send className="w-4 h-4 fill-slate-950" />
         </button>
       </div>
     </div>
