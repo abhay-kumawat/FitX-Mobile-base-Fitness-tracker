@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const syncUserStore = useUserStore();
 
   // Helper to format Firebase Auth error messages cleanly
-  const formatAuthError = (err: any): string => {
+  const formatAuthError = (err: any): string | null => {
     const code = err?.code || "";
     const message = err?.message || "";
 
@@ -103,23 +103,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return "Google sign in was cancelled.";
     }
     if (code === "auth/popup-blocked") {
-      return "Google sign-in popup was blocked by your browser. Please allow popups or sign in with email.";
-    }
-    if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid") {
-      return "Firebase API Key is unconfigured or invalid. Click 'Continue in Local Mode' to test the app.";
-    }
-    if (code === "auth/unauthorized-domain") {
-      return "Domain unauthorized in Firebase Console. Click 'Continue in Local Mode' to test the app.";
-    }
-    if (code === "auth/operation-not-allowed") {
-      return "Provider disabled in Firebase Console. Click 'Continue in Local Mode' to test the app.";
+      return "Google sign-in popup was blocked by browser. Please allow popups or use email sign in.";
     }
 
-    if (message.includes("api-key") || message.includes("API key")) {
-      return "Firebase credentials unconfigured. Click 'Continue in Local Mode' to test the app.";
+    // For Firebase API key or unconfigured domain errors, return null so local mode activates silently
+    if (
+      code === "auth/invalid-api-key" || 
+      code === "auth/api-key-not-valid" || 
+      code === "auth/unauthorized-domain" || 
+      code === "auth/operation-not-allowed" ||
+      message.includes("api-key") ||
+      message.includes("API key")
+    ) {
+      return null;
     }
 
-    return message || "An authentication error occurred. You can click 'Continue in Local Mode'.";
+    return message || "An authentication error occurred.";
   };
 
   // Create or Sync Firestore User Document
@@ -156,14 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           createdAt: nowIso,
           lastLogin: nowIso,
         };
-        // Omit undefined values when saving to Firestore
         const cleanPayload: Record<string, any> = { ...profileData };
         Object.keys(cleanPayload).forEach(key => cleanPayload[key] === undefined && delete cleanPayload[key]);
         await setDoc(userRef, cleanPayload);
       }
     } catch (e: any) {
-      console.warn("[Firestore Sync Warning]", e);
-      // Fallback local memory profile if offline or Firestore permission denied
+      console.warn("[Firestore Sync Warning - Fallback to memory]", e);
       profileData = {
         uid: fbUser.uid,
         fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
@@ -195,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return profileData;
   };
 
-  // Local Demo Login Mode (Fallback when Firebase credentials are not set up)
+  // Local Demo Login Mode (Silent Fallback when Firebase credentials are demo)
   const loginLocalDemo = (emailStr?: string, nameStr?: string) => {
     setError(null);
     const nowIso = new Date().toISOString();
@@ -230,7 +227,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const profile = await syncFirestoreUser(fbUser);
           setUserProfile(profile);
         } catch (err: any) {
-          setError(formatAuthError(err));
+          const formatted = formatAuthError(err);
+          if (formatted) setError(formatted);
+          else loginLocalDemo();
         }
       } else {
         setUser(null);
@@ -282,7 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (err: any) {
       console.warn("[updateUserProfile warning]", err);
-      // Fallback: update state locally even if Firestore connection fails
+      // Fallback: update state locally
       setUserProfile(updatedProfile);
     }
   };
@@ -296,7 +295,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await syncFirestoreUser(user);
       setUserProfile(profile);
     } catch (err: any) {
-      setError(formatAuthError(err));
+      const formatted = formatAuthError(err);
+      if (formatted) setError(formatted);
+      else loginLocalDemo();
     } finally {
       setLoading(false);
     }
@@ -313,8 +314,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile);
     } catch (err: any) {
       const formatted = formatAuthError(err);
-      setError(formatted);
-      throw err;
+      if (formatted) {
+        setError(formatted);
+        throw err;
+      } else {
+        loginLocalDemo("google.user@fitx.ai", "Google Athlete");
+      }
     } finally {
       setLoading(false);
     }
@@ -333,8 +338,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile);
     } catch (err: any) {
       const formatted = formatAuthError(err);
-      setError(formatted);
-      throw err;
+      if (formatted) {
+        setError(formatted);
+        throw err;
+      } else {
+        loginLocalDemo(emailStr, fullName);
+      }
     } finally {
       setLoading(false);
     }
@@ -351,8 +360,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile);
     } catch (err: any) {
       const formatted = formatAuthError(err);
-      setError(formatted);
-      throw err;
+      if (formatted) {
+        setError(formatted);
+        throw err;
+      } else {
+        loginLocalDemo(emailStr, emailStr.split("@")[0]);
+      }
     } finally {
       setLoading(false);
     }
@@ -365,8 +378,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await sendPasswordResetEmail(auth, emailStr);
     } catch (err: any) {
       const formatted = formatAuthError(err);
-      setError(formatted);
-      throw err;
+      if (formatted) {
+        setError(formatted);
+        throw err;
+      }
     }
   };
 
@@ -387,6 +402,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setUserProfile(null);
       syncAuthStore.logout();
+      setError(null);
     }
   };
 

@@ -32,7 +32,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { LogoutConfirmModal } from "@/components/auth/LogoutConfirmModal";
 
 export default function ProfilePage() {
-  const { userProfile, loading, error, updateUserProfile, refetchUserProfile } = useAuthContext();
+  const { userProfile, loading, error, updateUserProfile, refetchUserProfile, clearError } = useAuthContext();
   const { toggleInjury, toggleEquipment, profile: localStoreProfile } = useUserStore();
   
   const [mounted, setMounted] = useState(false);
@@ -182,22 +182,34 @@ export default function ProfilePage() {
   return (
     <AuthGuard>
       <div className="flex flex-col gap-6 pb-28 animate-smooth-reveal">
-        {/* Firestore Error Alert with Retry Button */}
+        {/* Firestore Error Alert with Retry & Dismiss Buttons */}
         {error && (
           <div className="p-4 bg-rose-50 border-2 border-rose-200 rounded-2xl flex items-center justify-between gap-3 text-rose-800 shadow-xs">
             <div className="flex items-center gap-2 text-xs font-bold">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
-            <button
-              onClick={() => {
-                soundscape.playTapSound();
-                refetchUserProfile();
-              }}
-              className="px-3 py-1.5 bg-rose-600 text-white font-black text-xs rounded-xl hover:bg-rose-700 transition-colors flex items-center gap-1 shrink-0"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Retry
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => {
+                  soundscape.playTapSound();
+                  refetchUserProfile();
+                }}
+                className="px-3 py-1.5 bg-rose-600 text-white font-black text-xs rounded-xl hover:bg-rose-700 transition-colors flex items-center gap-1"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </button>
+              <button
+                onClick={() => {
+                  soundscape.playTapSound();
+                  clearError();
+                }}
+                className="p-1.5 text-rose-500 hover:text-rose-900 rounded-xl hover:bg-rose-100 transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
