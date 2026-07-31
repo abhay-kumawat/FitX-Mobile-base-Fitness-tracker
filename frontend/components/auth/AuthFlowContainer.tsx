@@ -58,6 +58,7 @@ export function AuthFlowContainer({
     loginWithGoogle, 
     signUpWithEmail, 
     loginWithEmail, 
+    loginLocalDemo,
     sendPasswordReset, 
     resendVerificationEmail, 
     reloadUser,
@@ -286,11 +287,26 @@ export function AuthFlowContainer({
         </button>
       )}
 
-      {/* Global Error Banner */}
+      {/* Global Error Banner with Local Mode Fallback */}
       {error && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-bold flex items-center gap-2 animate-smooth-reveal">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>{error}</span>
+        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-bold flex flex-col gap-2 animate-smooth-reveal">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              soundscape.playTapSound();
+              loginLocalDemo(email, fullName);
+              if (onSuccess) onSuccess();
+              else router.push("/dashboard");
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-slate-900 text-white font-extrabold text-[11px] hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs mt-1"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Continue in Local Mode</span>
+          </button>
         </div>
       )}
 

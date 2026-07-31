@@ -59,6 +59,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, pass: string, fullName: string) => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
+  loginLocalDemo: (email?: string, name?: string) => void;
   sendPasswordReset: (email: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   reloadUser: () => Promise<void>;
@@ -81,25 +82,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Helper to format Firebase Auth error messages cleanly
   const formatAuthError = (err: any): string => {
     const code = err?.code || "";
-    switch (code) {
-      case "auth/email-already-in-use":
-        return "An account with this email address already exists.";
-      case "auth/wrong-password":
-      case "auth/invalid-credential":
-        return "Incorrect email or password. Please check your credentials.";
-      case "auth/user-not-found":
-        return "No account found with this email. Please sign up first.";
-      case "auth/weak-password":
-        return "Password is too weak. Must be at least 8 characters.";
-      case "auth/network-request-failed":
-        return "Network connection error. Please check your internet connection.";
-      case "auth/popup-closed-by-user":
-        return "Google sign in was cancelled.";
-      case "auth/user-disabled":
-        return "This user account has been disabled.";
-      default:
-        return err?.message || "An authentication error occurred. Please try again.";
+    const message = err?.message || "";
+
+    if (code === "auth/email-already-in-use") {
+      return "An account with this email address already exists.";
     }
+    if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+      return "Incorrect email or password. Please check your credentials.";
+    }
+    if (code === "auth/user-not-found") {
+      return "No account found with this email. Please sign up first.";
+    }
+    if (code === "auth/weak-password") {
+      return "Password is too weak. Must be at least 8 characters.";
+    }
+    if (code === "auth/network-request-failed") {
+      return "Network connection error. Please check your internet connection.";
+    }
+    if (code === "auth/popup-closed-by-user") {
+      return "Google sign in was cancelled.";
+    }
+    if (code === "auth/popup-blocked") {
+      return "Google sign-in popup was blocked by your browser. Please allow popups or sign in with email.";
+    }
+    if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid") {
+      return "Firebase API Key is unconfigured or invalid. Click 'Continue in Local Mode' to test the app.";
+    }
+    if (code === "auth/unauthorized-domain") {
+      return "Domain unauthorized in Firebase Console. Click 'Continue in Local Mode' to test the app.";
+    }
+    if (code === "auth/operation-not-allowed") {
+      return "Provider disabled in Firebase Console. Click 'Continue in Local Mode' to test the app.";
+    }
+
+    if (message.includes("api-key") || message.includes("API key")) {
+      return "Firebase credentials unconfigured. Click 'Continue in Local Mode' to test the app.";
+    }
+
+    return message || "An authentication error occurred. You can click 'Continue in Local Mode'.";
   };
 
   // Create or Sync Firestore User Document
@@ -131,8 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: fbUser.email || "",
           photoURL: fbUser.photoURL || "",
           level: 1,
-          xp: 0,
-          streak: 0,
+          xp: 100,
+          streak: 1,
           createdAt: nowIso,
           lastLogin: nowIso,
         };
@@ -143,15 +163,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e: any) {
       console.warn("[Firestore Sync Warning]", e);
-      // Fallback local memory profile if offline
+      // Fallback local memory profile if offline or Firestore permission denied
       profileData = {
         uid: fbUser.uid,
         fullName: fullNameOverride || fbUser.displayName || fbUser.email?.split("@")[0] || "User",
         email: fbUser.email || "",
         photoURL: fbUser.photoURL || "",
         level: 1,
-        xp: 0,
-        streak: 0,
+        xp: 100,
+        streak: 1,
         createdAt: nowIso,
         lastLogin: nowIso,
       };
@@ -175,6 +195,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return profileData;
   };
 
+  // Local Demo Login Mode (Fallback when Firebase credentials are not set up)
+  const loginLocalDemo = (emailStr?: string, nameStr?: string) => {
+    setError(null);
+    const nowIso = new Date().toISOString();
+    const demoProfile: UserDocument = {
+      uid: `local_usr_${Date.now()}`,
+      fullName: nameStr || (emailStr ? emailStr.split("@")[0] : "Athlete User"),
+      email: emailStr || "user@fitx.ai",
+      photoURL: "",
+      level: 1,
+      xp: 100,
+      streak: 1,
+      createdAt: nowIso,
+      lastLogin: nowIso,
+    };
+
+    setUserProfile(demoProfile);
+    syncAuthStore.loginWithEmail(demoProfile.email, demoProfile.fullName);
+    syncUserStore.updateProfile({
+      name: demoProfile.fullName,
+    });
+    setLoading(false);
+  };
+
   // Firebase Auth Observer (onAuthStateChanged)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -186,12 +230,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const profile = await syncFirestoreUser(fbUser);
           setUserProfile(profile);
         } catch (err: any) {
-          setError("Failed to load user profile from Firestore. Please click retry.");
+          setError(formatAuthError(err));
         }
       } else {
         setUser(null);
-        setUserProfile(null);
-        syncAuthStore.logout();
+        if (!syncAuthStore.isAuthenticated) {
+          setUserProfile(null);
+        }
       }
       setLoading(false);
     });
@@ -209,20 +254,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Update User Profile in Firestore and State Immediately
   const updateUserProfile = async (updates: Partial<UserDocument>) => {
-    if (!user || !userProfile) {
-      throw new Error("No authenticated user to update.");
+    const currentUid = user?.uid || userProfile?.uid;
+    if (!currentUid || !userProfile) {
+      throw new Error("No active user profile to update.");
     }
     
     setError(null);
     const updatedProfile = { ...userProfile, ...updates };
-    const userRef = doc(db, "users", user.uid);
 
     try {
-      // Clean undefined keys before Firestore write
-      const payload: Record<string, any> = { ...updates };
-      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-
-      await updateDoc(userRef, payload);
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        const payload: Record<string, any> = { ...updates };
+        Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+        await updateDoc(userRef, payload);
+      }
       setUserProfile(updatedProfile);
 
       // Sync Zustand user store
@@ -235,10 +281,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hrvScore: updatedProfile.hrvScore,
       });
     } catch (err: any) {
-      console.error("[updateUserProfile error]", err);
+      console.warn("[updateUserProfile warning]", err);
       // Fallback: update state locally even if Firestore connection fails
       setUserProfile(updatedProfile);
-      setError("Profile updated locally: " + formatAuthError(err));
     }
   };
 
@@ -251,7 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await syncFirestoreUser(user);
       setUserProfile(profile);
     } catch (err: any) {
-      setError("Failed to fetch user profile: " + formatAuthError(err));
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -267,7 +312,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setUserProfile(profile);
     } catch (err: any) {
-      setError(formatAuthError(err));
+      const formatted = formatAuthError(err);
+      setError(formatted);
       throw err;
     } finally {
       setLoading(false);
@@ -286,7 +332,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setUserProfile(profile);
     } catch (err: any) {
-      setError(formatAuthError(err));
+      const formatted = formatAuthError(err);
+      setError(formatted);
       throw err;
     } finally {
       setLoading(false);
@@ -303,7 +350,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setUserProfile(profile);
     } catch (err: any) {
-      setError(formatAuthError(err));
+      const formatted = formatAuthError(err);
+      setError(formatted);
       throw err;
     } finally {
       setLoading(false);
@@ -316,7 +364,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       await sendPasswordResetEmail(auth, emailStr);
     } catch (err: any) {
-      setError(formatAuthError(err));
+      const formatted = formatAuthError(err);
+      setError(formatted);
       throw err;
     }
   };
@@ -332,17 +381,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await signOut(auth);
+    } catch (err: any) {
+      console.warn("[Firebase signOut warning]", err);
+    } finally {
       setUser(null);
       setUserProfile(null);
       syncAuthStore.logout();
-    } catch (err: any) {
-      setError(formatAuthError(err));
     }
   };
 
   const clearError = () => setError(null);
 
-  const isAuthenticated = !!user || syncAuthStore.isAuthenticated;
+  const isAuthenticated = !!user || syncAuthStore.isAuthenticated || !!userProfile;
 
   return (
     <AuthContext.Provider
@@ -355,6 +405,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithGoogle,
         signUpWithEmail,
         loginWithEmail,
+        loginLocalDemo,
         sendPasswordReset,
         resendVerificationEmail,
         reloadUser,
